@@ -1,0 +1,205 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  dev                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      initialStates;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+nParticles	20;
+flow
+{
+UInf	(0.5 0 0);
+rho	rhoInf;
+rhoInf	1.4;
+}
+particle.0
+{
+particleShape	cylinder;
+p1	(0.7604849663 -0.04095679974 -0.5);
+p2	(0.7604849663 -0.04095679974 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.1
+{
+particleShape	cylinder;
+p1	(-0.447437977 0.05894046321 -0.5);
+p2	(-0.447437977 0.05894046321 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.2
+{
+particleShape	cylinder;
+p1	(0.6382208432 0.4413906719 -0.5);
+p2	(0.6382208432 0.4413906719 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.3
+{
+particleShape	cylinder;
+p1	(0.3813504015 -0.133911812 -0.5);
+p2	(0.3813504015 -0.133911812 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.4
+{
+particleShape	cylinder;
+p1	(0.9287379138 -0.3922501721 -0.5);
+p2	(0.9287379138 -0.3922501721 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.5
+{
+particleShape	cylinder;
+p1	(-0.1359472262 0.07618442988 -0.5);
+p2	(-0.1359472262 0.07618442988 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.6
+{
+particleShape	cylinder;
+p1	(0.4519851976 -0.3235743205 -0.5);
+p2	(0.4519851976 -0.3235743205 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.7
+{
+particleShape	cylinder;
+p1	(0.3812829629 -0.4440799037 -0.5);
+p2	(0.3812829629 -0.4440799037 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.8
+{
+particleShape	cylinder;
+p1	(-0.01944632538 0.2258303356 -0.5);
+p2	(-0.01944632538 0.2258303356 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.9
+{
+particleShape	cylinder;
+p1	(0.7292365528 0.2473282735 -0.5);
+p2	(0.7292365528 0.2473282735 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.10
+{
+particleShape	cylinder;
+p1	(0.2387386983 0.05835170629 -0.5);
+p2	(0.2387386983 0.05835170629 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.11
+{
+particleShape	cylinder;
+p1	(-0.07436226957 0.3953952035 -0.5);
+p2	(-0.07436226957 0.3953952035 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.12
+{
+particleShape	cylinder;
+p1	(0.3761742776 0.1330015971 -0.5);
+p2	(0.3761742776 0.1330015971 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.13
+{
+particleShape	cylinder;
+p1	(-0.3215645327 -0.2670313952 -0.5);
+p2	(-0.3215645327 -0.2670313952 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.14
+{
+particleShape	cylinder;
+p1	(0.504840589 0.04697374112 -0.5);
+p2	(0.504840589 0.04697374112 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.15
+{
+particleShape	cylinder;
+p1	(0.7125526908 -0.2435925889 -0.5);
+p2	(0.7125526908 -0.2435925889 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.16
+{
+particleShape	cylinder;
+p1	(0.9206131595 0.07644725557 -0.5);
+p2	(0.9206131595 0.07644725557 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.17
+{
+particleShape	cylinder;
+p1	(0.08421719169 0.3629118434 -0.5);
+p2	(0.08421719169 0.3629118434 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.18
+{
+particleShape	cylinder;
+p1	(0.9976266357 -0.133898715 -0.5);
+p2	(0.9976266357 -0.133898715 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+particle.19
+{
+particleShape	cylinder;
+p1	(0.5037599057 0.2836022685 -0.5);
+p2	(0.5037599057 0.2836022685 0.5);
+d	0.1;
+nTheta	100;
+delta	0.0075;
+}
+

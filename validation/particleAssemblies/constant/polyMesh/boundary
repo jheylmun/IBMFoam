@@ -1,0 +1,76 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  dev                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+6
+(
+    inlet
+    {
+        type            cyclic;
+        inGroups        1(cyclic);
+        nFaces          160;
+        startFace       89160;
+        matchTolerance  0.0001;
+        transform       unknown;
+        neighbourPatch  outlet;
+    }
+    outlet
+    {
+        type            cyclic;
+        inGroups        1(cyclic);
+        nFaces          160;
+        startFace       89320;
+        matchTolerance  0.0001;
+        transform       unknown;
+        neighbourPatch  inlet;
+    }
+    freestream1
+    {
+        type            cyclic;
+        inGroups        1(cyclic);
+        nFaces          280;
+        startFace       89480;
+        matchTolerance  0.0001;
+        transform       unknown;
+        neighbourPatch  freestream2;
+    }
+    freestream2
+    {
+        type            cyclic;
+        inGroups        1(cyclic);
+        nFaces          280;
+        startFace       89760;
+        matchTolerance  0.0001;
+        transform       unknown;
+        neighbourPatch  freestream1;
+    }
+    freestream3
+    {
+        type            empty;
+        inGroups        1(empty);
+        nFaces          44800;
+        startFace       90040;
+    }
+    freestream4
+    {
+        type            empty;
+        inGroups        1(empty);
+        nFaces          44800;
+        startFace       134840;
+    }
+)
+
+// ************************************************************************* //

@@ -1,0 +1,31 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  dev                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      IBMproperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+nParticles 1;
+
+particle.0
+{
+    particleShape   sphere;
+    p1              (0 0 -0.3);
+    p2              (0 0 0.3);
+    center          (0 0 0);
+    d               0.1;
+    nTheta          40;
+    nk              30;
+    delta           0.01;
+}
+
+// ************************************************************************* //
