@@ -72,10 +72,8 @@ Foam::IBM::particleShapes::cylinder::cylinder
         }
     }
 
-    updateCellLists();
     discretize();
-    this->setNeighbours();
-    this->setWeights();
+    updateCellLists();
     calcSf();
 }
 
@@ -130,7 +128,9 @@ void Foam::IBM::particleShapes::cylinder::discretize()
 
             for (label k = 0; k < nk_; k++)
             {
-                baseMesh_[index(i,j,k)] =
+                label celli = index(i,j,k);
+
+                baseMesh_[celli] =
                     axis_[k]
                   + vector
                     (
@@ -138,6 +138,7 @@ void Foam::IBM::particleShapes::cylinder::discretize()
                         r*Foam::sin(theta),
                         scalar(0)
                     );
+                centeredMesh_[celli] = baseMesh_[celli] - CoM();
             }
         }
     }
@@ -150,39 +151,41 @@ void Foam::IBM::particleShapes::cylinder::updateCellLists()
     scalar innerR = R - delta_;
     scalar twoPi = constant::mathematical::twoPi;
 
-    shellCells_.clear();
-    neighbourPoints_.clear();
+    shellCells_ = labelList(mesh_.nCells(), -1);
+    neighbourPoints_ = List<labelVector>(mesh_.nCells(), Zero);
 
+    label i = 0;
     forAll(mesh_.cellCentres(), celli)
     {
-        for (label k = 0; k < nk_; k++)
+        vector diff = mesh_.cellCentres()[celli] - centerPoint_;
+
+        scalar r = mag(diff);
+
+        if (r >= innerR && r <= R)
         {
-            vector diff =
-                mesh_.cellCentres()[celli]
-              - axis_[k];
+            shellCells_[i] = celli;
 
-            scalar r = mag(diff);
+            scalar theta = Foam::atan2(diff.y(),diff.x());
 
-            if (r >= innerR && r <= R)
-            {
-                shellCells_.append(celli);
+            if (theta < 0) theta += twoPi;
 
-                scalar theta = Foam::atan2(diff.y(),diff.x());
-
-                if (theta < 0) theta += twoPi;
-
-                neighbourPoints_.append
+            neighbourPoints_[i] =
+            (
+                labelVector
                 (
-                    labelVector
-                    (
-                        0,
-                        label(theta*nTheta_/twoPi),
-                        k
-                    )
-                );
-            }
+                    0,
+                    label(theta*nTheta_/twoPi),
+                    k
+                )
+            );
+            i++;
         }
     }
+    shellCells_.resize(i);
+    neighbourPoints_.resize(i);
+
+    this->setNeighbours();
+    this->setWeights();
 }
 
 Foam::scalar Foam::IBM::particleShapes::cylinder::D() const

@@ -70,7 +70,7 @@ Foam::IBM::particleList<pType>::devRhoReff() const
         const fluidThermo& thermo =
             mesh_.lookupObject<fluidThermo>(fluidThermo::dictName);
 
-        const volVectorField& U = mesh_.lookupObject<volVectorField>(UName_);
+        const volVectorField& U = mesh_.lookupObject<volVectorField>("U");
 
         return -thermo.mu()*dev(twoSymm(fvc::grad(U)));
     }
@@ -82,7 +82,7 @@ Foam::IBM::particleList<pType>::devRhoReff() const
         const transportModel& laminarT =
             mesh_.lookupObject<transportModel>("transportProperties");
 
-        const volVectorField& U = mesh_.lookupObject<volVectorField>(UName_);
+        const volVectorField& U = mesh_.lookupObject<volVectorField>("U");
 
         return -rho()*laminarT.nu()*dev(twoSymm(fvc::grad(U)));
     }
@@ -93,7 +93,7 @@ Foam::IBM::particleList<pType>::devRhoReff() const
 
         dimensionedScalar nu(transportProperties.lookup("nu"));
 
-        const volVectorField& U = mesh_.lookupObject<volVectorField>(UName_);
+        const volVectorField& U = mesh_.lookupObject<volVectorField>("U");
 
         return -rho()*nu*dev(twoSymm(fvc::grad(U)));
     }
@@ -154,7 +154,7 @@ Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::mu() const
 template<class pType>
 Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::rho() const
 {
-    if (rhoName_ == "rhoInf")
+    if (!mesh_.foundObject<volScalarField>("thermo:rho"))
     {
         return tmp<volScalarField>
         (
@@ -173,27 +173,7 @@ Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::rho() const
     }
     else
     {
-        return(mesh_.lookupObject<volScalarField>(rhoName_));
-    }
-}
-
-template<class pType>
-Foam::scalar Foam::IBM::particleList<pType>::rho(const volScalarField& p) const
-{
-    if (p.dimensions() == dimPressure)
-    {
-        return 1.0;
-    }
-    else
-    {
-        if (rhoName_ != "rhoInf")
-        {
-            FatalErrorInFunction
-                << "Dynamic pressure is expected but kinematic is provided."
-                << exit(FatalError);
-        }
-
-        return rhoRef_;
+        return(mesh_.lookupObject<volScalarField>("thermo:rho"));
     }
 }
 
@@ -231,17 +211,48 @@ Foam::IBM::particleList<pType>::particleList
             IOobject::NO_WRITE
         )
     ),
-    UName_(dict_.subDict("flow").lookupOrDefault<word>("U","U")),
-    rhoName_(dict_.subDict("flow").lookupOrDefault<word>("rho","rho")),
-    pName_(dict_.subDict("flow").lookupOrDefault<word>("p","p"))
+    UInf_
+    (
+        dict_.subDict("flow").template lookupOrDefault<vector>("UInf", Zero)
+    ),
+    flowNormal_(UInf_/(mag(UInf_) + small)),
+    rhoRef_
+    (
+        dict_.subDict("flow").template lookupOrDefault<scalar>("rhoInf", 1.0)
+    ),
+    pRef_
+    (
+        dict_.subDict("flow").template lookupOrDefault<scalar>("pInf", 0.0)
+    ),
+    Uold_
+    (
+        IOobject
+        (
+            "Uold",
+            mesh.time().timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE,
+            true
+        ),
+        mesh,
+        dimensionedVector("zero", dimVelocity, Zero)
+    ),
+    S_
+    (
+        IOobject
+        (
+            "ibmSource",
+            mesh.time().timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE,
+            true
+        ),
+        mesh,
+        dimensionedVector("zero", dimAcceleration, Zero)
+    )
 {
-    if (rhoName_ == "rhoInf")
-    {
-        dict_.subDict("flow").lookup("rhoInf") >> rhoRef_;
-    }
-    pRef_ = dict_.subDict("flow").lookupOrDefault<scalar>("pRef", 0.0);
-    UInf_ = dict_.subDict("flow").lookup("UInf");
-
     PtrList<pType>& pList = *this;
     pList.resize(readLabel(dict_.lookup("nParticles")));
 
@@ -260,7 +271,9 @@ Foam::IBM::particleList<pType>::particleList
                         "particle",
                         Foam::name(i)
                     )
-                )
+                ),
+                Uold_,
+                S_
             )
         );
     }
@@ -306,11 +319,12 @@ Foam::tmp<Foam::volVectorField> Foam::IBM::particleList<pType>::forcing
     volVectorField& F = tmpF.ref();
     PtrList<pType>& pList = *this;
 
-    const volVectorField& U = mesh_.lookupObject<volVectorField>(UName_);
+    const volVectorField& U = mesh_.lookupObject<volVectorField>("U");
+    Uold_ = U.oldTime();
 
-    surfaceVectorField Uf = fvc::interpolate(U);
-    surfaceVectorField Ufold = fvc::interpolate(U.oldTime());
-    surfaceVectorField Sf = fvc::interpolate(S);
+    surfaceVectorField Uf(fvc::interpolate(U));
+    surfaceVectorField Ufold(fvc::interpolate(U.oldTime()));
+    surfaceVectorField Sf(fvc::interpolate(S));
 
     forAll(pList, particlei)
     {
@@ -326,13 +340,17 @@ void Foam::IBM::particleList<pType>::integrateSurfaceStresses()
 {
     PtrList<pType>& pList = *this;
 
-    const volScalarField& p = mesh_.lookupObject<volScalarField>(pName_);
-    dimensionedScalar rhoRef("rhoRef", dimDensity, rho(p));
+    const volScalarField& p = mesh_.lookupObject<volScalarField>("p");
+    dimensionedScalar rho("rho", dimDensity, rhoRef());
     dimensionedScalar pRef =
-        dimensionedScalar("pRef", dimPressure, pRef_)/rhoRef;
+        dimensionedScalar("pRef", dimPressure, pRef_)/rho;
+    if (p.dimensions() != dimPressure)
+    {
+        pRef.dimensions().reset(dimPressure/dimDensity);
+    }
 
-    surfaceSymmTensorField tauf = fvc::interpolate(devRhoReff());
-    surfaceScalarField pf = fvc::interpolate((p - pRef));
+    surfaceSymmTensorField tauf(fvc::interpolate(devRhoReff()));
+    surfaceScalarField pf(fvc::interpolate(p) - pRef);
 
     forAll(pList, particlei)
     {
@@ -365,7 +383,6 @@ bool Foam::IBM::particleList<pType>::write() const
 
         pos[i] = p.CoM();
         v[i] = p.v();
-        i++;
     }
     pos.write();
     v.write();

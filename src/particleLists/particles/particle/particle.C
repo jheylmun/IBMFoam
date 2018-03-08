@@ -121,12 +121,51 @@ void Foam::IBM::particle::setProcs()
 Foam::IBM::particle::particle
 (
     const particleList<particle>& pList,
-    const dictionary& dict
+    const dictionary& dict,
+    const volVectorField& Uold,
+    const volVectorField& S
 )
 :
     pList_(pList),
     mesh_(pList_.mesh()),
     shape_(particleShape::New(mesh_,dict)),
+    U_(mesh_.lookupObject<volVectorField>("U")),
+    U0_(Uold),
+//     rho_(mesh_.lookupObject<volScalarField>("thermo:rho")),
+    p_(mesh_.lookupObject<volScalarField>("p")),
+    S_(S),
+//     UInterp_
+//     (
+//         interpolation<vector>::New
+//         (
+//             pList.ibmDict().subDict("interpolationSchemes"),
+//             U_
+//         )
+//     ),
+//     U0Interp_
+//     (
+//         interpolation<vector>::New
+//         (
+//             pList.ibmDict().subDict("interpolationSchemes"),
+//             U0_
+//         )
+//     ),
+//     pInterp_
+//     (
+//         interpolation<scalar>::New
+//         (
+//             pList.ibmDict().subDict("interpolationSchemes"),
+//             p_
+//         )
+//     ),
+//     SInterp_
+//     (
+//         interpolation<vector>::New
+//         (
+//             pList.ibmDict().subDict("interpolationSchemes"),
+//             S_
+//         )
+//     ),
     v_(Zero),
     omega_(Zero),
     rho_(0.0),
@@ -241,4 +280,10 @@ Foam::scalar Foam::IBM::particle::Cd() const
         MaxEqOp<dimensionedScalar>()
     );
     return Cd.value();
+}
+
+void Foam::IBM::particle::update()
+{
+    shape_->moveMesh();
+    shape_->updateCellLists();
 }

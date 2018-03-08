@@ -57,10 +57,8 @@ Foam::IBM::particleShapes::sphere::sphere
     d_(readScalar(dict.lookup("d"))),
     center_(dict.lookup("center"))
 {
-    updateCellLists();
     discretize();
-    this->setNeighbours();
-    this->setWeights();
+    updateCellLists();
     calcSf();
 }
 
@@ -132,9 +130,11 @@ void Foam::IBM::particleShapes::sphere::discretize()
 
             for (label k = 0; k < nk_; k++)
             {
+                label celli = index(i,j,k);
+
                 scalar phi = dPhi*scalar(k);
 
-                baseMesh_[index(i,j,k)] =
+                baseMesh_[celli] =
                     center_
                   + vector
                     (
@@ -142,6 +142,7 @@ void Foam::IBM::particleShapes::sphere::discretize()
                         r*Foam::sin(theta)*Foam::sin(phi),
                         r*Foam::cos(phi)
                     );
+                centeredMesh_[celli] = baseMesh_[celli] - CoM();
             }
         }
     }
@@ -154,9 +155,10 @@ void Foam::IBM::particleShapes::sphere::updateCellLists()
     scalar innerR = R - delta_;
     scalar Pi = constant::mathematical::pi;
 
-    shellCells_.clear();
-    neighbourPoints_.clear();
+    shellCells_ = labelList(mesh_.nCells(), -1);
+    neighbourPoints_ = List<labelVector>(mesh_.nCells(), Zero);
 
+    label i = 0;
     forAll(mesh_.cellCentres(), celli)
     {
         vector diff =
@@ -167,7 +169,7 @@ void Foam::IBM::particleShapes::sphere::updateCellLists()
 
         if (r >= innerR && r <= R)
         {
-            shellCells_.append(celli);
+            shellCells_[i] = celli;
 
             scalar theta = Foam::atan2(diff.y(),diff.x());
             scalar phi = Foam::acos(diff.z()/r);
@@ -175,7 +177,7 @@ void Foam::IBM::particleShapes::sphere::updateCellLists()
             if (theta < 0) theta += 2.0*Pi;
             if (phi < 0) phi += 2.0*Pi;
 
-            neighbourPoints_.append
+            neighbourPoints_[i] =
             (
                 labelVector
                 (
@@ -184,8 +186,14 @@ void Foam::IBM::particleShapes::sphere::updateCellLists()
                     label(phi*nk_/Pi)
                 )
             );
+            i++;
         }
     }
+    shellCells_.resize(i);
+    neighbourPoints_.resize(i);
+
+    this->setNeighbours();
+    this->setWeights();
 }
 
 Foam::scalar Foam::IBM::particleShapes::sphere::D() const

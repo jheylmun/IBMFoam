@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 
     Info<< "\nStarting time loop\n" << endl;
 
-    while (simple.loop())
+    while (simple.loop(runTime))
     {
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
@@ -65,7 +65,6 @@ int main(int argc, char *argv[])
         {
             #include "UEqn.H"
             #include "pEqn.H"
-
         }
 
         laminarTransport.correct();

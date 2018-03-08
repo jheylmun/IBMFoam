@@ -48,6 +48,7 @@ SourceFiles
 #include "runTimeSelectionTables.H"
 #include "polyMesh.H"
 #include "particleShape.H"
+#include "interpolation.H"
 
 
 namespace Foam
@@ -73,6 +74,36 @@ protected:
     //- Particle shape containing mesh
     autoPtr<particleShape> shape_;
 
+    //- Const ref to velocity
+    const volVectorField& U_;
+
+    //- Const ref to old velocity
+    const volVectorField& U0_;
+
+    //- Const ref to density
+//     const volScalarField& rhof_;
+
+    //- Const ref to pressure
+    const volScalarField& p_;
+
+    //- Const ref to IBM source term
+    const volVectorField& S_;
+
+//     //- Velocity interpolator
+//     autoPtr<interpolation<vector>> UInterp_;
+//
+//     //- Velocity_old interpolator
+//     autoPtr<interpolation<vector>> U0Interp_;
+//
+//     //- Density interpolator
+//     autoPtr<interpolation<scalar>> rhoInterp_;
+//
+//     //- Pressure interpolator
+//     autoPtr<interpolation<scalar>> pInterp_;
+//
+//     //- Source interpolator
+//     autoPtr<interpolation<vector>> SInterp_;
+
     //- Linear velocity of particle
     vector v_;
 
@@ -82,6 +113,7 @@ protected:
     //- Particle density
     scalar rho_;
 
+    //- Total force acting on the particle
     vector integratedForce_;
 
     // Mpi data
@@ -125,7 +157,9 @@ public:
         particle
         (
             const particleList<particle>& pList,
-            const dictionary& dict
+            const dictionary& dict,
+            const volVectorField& Uold,
+            const volVectorField& S
         );
 
 
@@ -240,6 +274,9 @@ public:
         //  move particle in space.
         virtual void operator++()
         {}
+
+        //- Update weights, cell lists, and mesh
+        void update();
 };
 
 }   // End IBM namespace

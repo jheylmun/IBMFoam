@@ -91,7 +91,10 @@ protected:
     //  ie x_o = pos + delta
     scalar delta_;
 
-    //- Base mesh since particles do not deform (does not move)
+    //- Mesh centered at (0,0,0)
+    vectorList centeredMesh_;
+
+    //- Base mesh since particles do not deform
     vectorList baseMesh_;
 
     //- Surface normal vector time surface area
@@ -253,6 +256,9 @@ public:
         //  The created mesh will store values at the verticies rather than the
         //  cell centers.
         virtual void discretize() = 0;
+
+        //- Move mesh from (0,0,0) to CoM
+        void moveMesh();
 };
 
 }   // End IBM namespace

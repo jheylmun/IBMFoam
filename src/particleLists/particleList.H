@@ -62,46 +62,44 @@ class particleList
     public regIOobject,
     public PtrList<pType>
 {
-// Private Data
+    // Private Data
 
-    // Constant access to fvMesh
-    const fvMesh& mesh_;
+        // Constant access to fvMesh
+        const fvMesh& mesh_;
 
-    //- dictionary used to initialize points
-    IOdictionary dict_;
+        //- dictionary used to initialize points
+        IOdictionary dict_;
 
-    //- U name
-    word UName_;
-    vector UInf_;
+        //- Reference values
+        vector UInf_;
+        vector flowNormal_;
+        scalar rhoRef_;
+        scalar pRef_;
 
-    //- rho infinity
-    word rhoName_;
-    scalar rhoRef_;
+        //- Copy of old velocity field
+        volVectorField Uold_;
 
-    //- p name
-    word pName_;
-    scalar pRef_;
+        //- IBM source terms (advection, pressure, and viscous stress)
+        volVectorField S_;
 
-    //- Create IOobject
-    IOobject fieldIOobject
-    (
-        const word& fileName,
-        const IOobject::readOption& r
-    ) const;
 
-    //- Return the effective viscous stress (laminar + turbulent).
-    tmp<volSymmTensorField> devRhoReff() const;
+    // Priavte functions
 
-    //- Dynamic viscosity field
-    tmp<volScalarField> mu() const;
+        //- Create IOobject
+        IOobject fieldIOobject
+        (
+            const word& fileName,
+            const IOobject::readOption& r
+        ) const;
 
-    //- Return rho if specified otherwise rhoRef
-    tmp<volScalarField> rho() const;
+        //- Return the effective viscous stress (laminar + turbulent).
+        tmp<volSymmTensorField> devRhoReff() const;
 
-    //- Return rhoRef if the pressure field is dynamic, i.e. p/rho
-    //  otherwise return 1
-    scalar rho(const volScalarField& p) const;
+        //- Dynamic viscosity field
+        tmp<volScalarField> mu() const;
 
+        //- Return rho if specified otherwise rhoRef
+        tmp<volScalarField> rho() const;
 
 
 public:
@@ -125,6 +123,12 @@ public:
         const fvMesh& mesh() const
         {
             return mesh_;
+        }
+
+        //- Return dictionary
+        const dictionary& ibmDict() const
+        {
+            return dict_;
         }
 
         //- Freestream velocity

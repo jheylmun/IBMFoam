@@ -42,56 +42,52 @@ void Foam::IBM::particleShape::setWeights()
     // Total number of global mesh faces
     label nFaces = mesh_.nInternalFaces();
 
-    for (label i = 0; i < nRadial_; i++)
+    forAll(baseMesh_, pti)
     {
-        for (label j = 0; j < nTheta_; j++)
+        vector pt = baseMesh_[pti];
+        label celli = mesh_.findCell(pt);
+
+        if (celli != -1)
         {
-            for (label k = 0; k < nk_; k++)
+            const labelList& cellFaces = mesh_.cells()[celli];
+
+            //- Local copies of weights and faces
+            scalar W = 0.0;
+            scalarList w(20, 0.0);
+            labelList faces(mesh_.nFaces(), -1);
+
+            label wi = 0;
+            forAll(cellFaces, facei)
             {
-                label pti = index(i,j,k);
+                if (cellFaces[facei] > nFaces) continue;
 
-                vector pt = baseMesh_[pti];
-                label celli = mesh_.findCell(pt);
+                faces[wi] = cellFaces[facei];
 
-                if (celli != -1)
+                scalar diff =
+                    mag
+                    (
+                        mesh_.faceCentres()[cellFaces[facei]] - pt
+                    );
+
+                if (diff < small)
                 {
-                    const labelList& cellFaces = mesh_.cells()[celli];
+                    w = 0.0;
+                    w[wi] = 1.0;
+                    W = 1.0;
 
-                    //- Local copies of weights and faces
-                    scalar W = 0.0;
-                    scalarList w;
-                    labelList faces;
-
-                    label i = 0;
-                    forAll(cellFaces, facei)
-                    {
-                        if (cellFaces[facei] > nFaces) continue;
-
-                        faces.append(cellFaces[facei]);
-
-                        scalar diff =
-                            mag
-                            (
-                                mesh_.faceCentres()[cellFaces[facei]]
-                              - pt
-                            );
-
-                        if (diff < 1e-8)
-                        {
-                            w = 0.0;
-                            w.append(1.0);
-                            W = 1.0;
-                            break;
-                        }
-                        w.append(1.0/diff);
-                        W += w[i];
-                        i++;
-                    }
-                    wToLocal_[pti] = w;
-                    WToLocal_[pti] = W;
-                    facesToLocal_[pti] = faces;
+                    wi++;
+                    break;
                 }
+                w[wi] = (1.0/diff);
+                W += w[wi];
+                wi++;
             }
+            faces.resize(wi);
+            w.resize(wi);
+
+            wToLocal_[pti] = w;
+            WToLocal_[pti] = W;
+            facesToLocal_[pti] = faces;
         }
     }
 
@@ -136,42 +132,43 @@ void Foam::IBM::particleShape::setNeighbours()
     {
         label j = neighbourPoints_[celli].y();
         label k = neighbourPoints_[celli].z();
+        label jp1 = ((j+1) % nTheta_);
 
         if (nk_ != 1)
         {
             if (k == nk_ - 1) continue;
 
-            Is_[celli][0] = index(0,j,                 k);
-            Is_[celli][1] = index(0,((j+1) % nTheta_), k);
-            Is_[celli][2] = index(0,j,                 k + 1);
-            Is_[celli][3] = index(0,((j+1) % nTheta_), k + 1);
+            Is_[celli][0] = index(0, j,   k);
+            Is_[celli][1] = index(0, jp1, k);
+            Is_[celli][2] = index(0, j,   k + 1);
+            Is_[celli][3] = index(0, jp1, k + 1);
 
-            Is_[celli][4] = index(1,j,                 k);
-            Is_[celli][5] = index(1,((j+1) % nTheta_), k);
-            Is_[celli][6] = index(1,j,                 k + 1);
-            Is_[celli][7] = index(1,((j+1) % nTheta_), k + 1);
+            Is_[celli][4] = index(1, j,   k);
+            Is_[celli][5] = index(1, jp1, k);
+            Is_[celli][6] = index(1, j,   k + 1);
+            Is_[celli][7] = index(1, jp1, k + 1);
 
-            Os_[celli][0] = index(2,j,                 k);
-            Os_[celli][1] = index(2,((j+1) % nTheta_), k);
-            Os_[celli][2] = index(2,j,                 k + 1);
-            Os_[celli][3] = index(2,((j+1) % nTheta_), k + 1);
+            Os_[celli][0] = index(2, j,   k);
+            Os_[celli][1] = index(2, jp1, k);
+            Os_[celli][2] = index(2, j,   k + 1);
+            Os_[celli][3] = index(2, jp1, k + 1);
         }
         else
         {
-            Is_[celli][0] = index(0,j,                 k);
-            Is_[celli][1] = index(0,((j+1) % nTheta_), k);
-            Is_[celli][2] = index(0,j,                 k);
-            Is_[celli][3] = index(0,((j+1) % nTheta_), k);
+            Is_[celli][0] = index(0, j,   k);
+            Is_[celli][1] = index(0, jp1, k);
+            Is_[celli][2] = index(0, j,   k);
+            Is_[celli][3] = index(0, jp1, k);
 
-            Is_[celli][4] = index(1,j,                 k);
-            Is_[celli][5] = index(1,((j+1) % nTheta_), k);
-            Is_[celli][6] = index(1,j,                 k);
-            Is_[celli][7] = index(1,((j+1) % nTheta_), k);
+            Is_[celli][4] = index(1, j,   k);
+            Is_[celli][5] = index(1, jp1, k);
+            Is_[celli][6] = index(1, j,   k);
+            Is_[celli][7] = index(1, jp1, k);
 
-            Os_[celli][0] = index(2,j,                 k);
-            Os_[celli][1] = index(2,((j+1) % nTheta_), k);
-            Os_[celli][2] = index(2,j,                 k);
-            Os_[celli][3] = index(2,((j+1) % nTheta_), k);
+            Os_[celli][0] = index(2, j,   k);
+            Os_[celli][1] = index(2, jp1, k);
+            Os_[celli][2] = index(2, j,   k);
+            Os_[celli][3] = index(2, jp1, k);
         }
     }
 }
@@ -191,6 +188,7 @@ Foam::IBM::particleShape::particleShape
     nk_(dict.lookupOrDefault<label>("nk",1)),
     N_(nRadial_*nTheta_*nk_),
     delta_(readScalar(dict.lookup("delta"))),
+    centeredMesh_(N_, Zero),
     baseMesh_(N_,Zero),
     Sf_(nTheta_*nk_,Zero),
     neighbourPoints_(N_),
@@ -204,3 +202,13 @@ Foam::IBM::particleShape::particleShape
 
 Foam::IBM::particleShape::~particleShape()
 {}
+
+// * * * * * * * * * * * * * * Public Member Functions * * * * * * * * * * * * //
+
+void Foam::IBM::particleShape::moveMesh()
+{
+    forAll(baseMesh_, celli)
+    {
+        baseMesh_[celli] = centeredMesh_[celli] + CoM();
+    }
+}
