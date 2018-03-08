@@ -175,7 +175,7 @@ void Foam::IBM::particleShapes::cylinder::updateCellLists()
                 (
                     0,
                     label(theta*nTheta_/twoPi),
-                    k
+                    0
                 )
             );
             i++;
