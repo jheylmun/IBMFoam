@@ -11,34 +11,21 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      initialStates;
+    object      IBMproperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+nParticles 1;
 
-nParticles	1;
-moving false;
-e_ 1.0;
-
-flow
-{
-    UInf    (0.3 0 0);
-    rhoRef  1.4;
-}
 particle.0
 {
-    particleShape	cylinder;
-    p1	(0 0 -0.1);
-    p2	(0 0 0.1);
-    d	0.1;
-    nTheta	100;
-    delta	0.005;
+    particleShape   sphere;
+    p1              (0 0 -0.3);
+    p2              (0 0 0.3);
+    center          (0 0 0);
+    d               0.1;
+    nTheta          40;
+    nk              30;
+    delta           0.01;
 }
 
-interpolationSchemes
-{
-    U       cellPoint;
-    Uold    cellPoint;
-    p       cellPoint;
-    ibmSource cellPoint;
-}
-
+// ************************************************************************* //

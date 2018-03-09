@@ -15,9 +15,10 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-nParticles	1;
-moving false;
-e_ 1.0;
+nParticles	3;
+moving true;
+
+e 0.9;
 
 flow
 {
@@ -27,11 +28,37 @@ flow
 particle.0
 {
     particleShape	cylinder;
+    rho 100;
+    v   (.1 0 0);
     p1	(0 0 -0.1);
     p2	(0 0 0.1);
     d	0.1;
     nTheta	100;
-    delta	0.005;
+    delta	0.011;
+}
+
+particle.1
+{
+    particleShape	cylinder;
+    rho 100;
+    v   (-.1 0 0);
+    p1	(0.2 0.05 -0.1);
+    p2	(0.2 0.05 0.1);
+    d	0.1;
+    nTheta	100;
+    delta	0.011;
+}
+
+particle.2
+{
+    particleShape	cylinder;
+    rho 100;
+    v   (0 0.1 0);
+    p1	(0.1 -0.15 -0.1);
+    p2	(0.1 -0.15 0.1);
+    d	0.1;
+    nTheta	100;
+    delta	0.011;
 }
 
 interpolationSchemes

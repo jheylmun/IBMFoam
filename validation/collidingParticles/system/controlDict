@@ -23,15 +23,15 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         20;
+endTime         4;
 
 deltaT          .001;
 
 writeControl    adjustableRunTime;
 
-writeInterval   .1;
+writeInterval   .01;
 
-purgeWrite      20;
+purgeWrite      0;
 
 writeFormat     ascii;
 
@@ -47,7 +47,7 @@ runTimeModifiable true;
 
 adjustTimeStep  yes;
 
-maxCo           0.2;
+maxCo           0.5;
 
 functions0
 {

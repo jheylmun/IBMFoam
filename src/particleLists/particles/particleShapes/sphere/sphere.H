@@ -94,14 +94,23 @@ public:
         //- Particle diameter
         virtual scalar D() const;
 
-        //- Frontal area
+        //- Surface area
         virtual scalar A() const;
+
+        //- Particle volume
+        virtual scalar V() const;
 
         //- Center of mass
         virtual const vector& CoM() const;
 
         //- Center of mass
         virtual vector& CoM();
+
+        //- Return the radius give a position of another particle
+        virtual scalar r(const vector& x2) const
+        {
+            return d_/2.0;
+        }
 };
 
 }   // End particleShapes namespace

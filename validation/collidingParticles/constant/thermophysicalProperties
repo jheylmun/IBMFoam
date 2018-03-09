@@ -11,34 +11,39 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      initialStates;
+    object      thermophysicalProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-nParticles	1;
-moving false;
-e_ 1.0;
-
-flow
+thermoType
 {
-    UInf    (0.3 0 0);
-    rhoRef  1.4;
-}
-particle.0
-{
-    particleShape	cylinder;
-    p1	(0 0 -0.1);
-    p2	(0 0 0.1);
-    d	0.1;
-    nTheta	100;
-    delta	0.005;
+    type            hePsiThermo;
+    mixture         pureMixture;
+    transport       const;
+    thermo          eConst;
+    equationOfState perfectGas;
+    specie          specie;
+    energy          sensibleInternalEnergy;
 }
 
-interpolationSchemes
+mixture
 {
-    U       cellPoint;
-    Uold    cellPoint;
-    p       cellPoint;
-    ibmSource cellPoint;
+    specie
+    {
+        nMoles      1;
+        molWeight   28.9;
+    }
+    thermodynamics
+    {
+        Cv          712;
+        Hf          0;
+    }
+    transport
+    {
+        mu          1e-05;
+        Pr          0.7;
+    }
 }
 
+
+// ************************************************************************* //

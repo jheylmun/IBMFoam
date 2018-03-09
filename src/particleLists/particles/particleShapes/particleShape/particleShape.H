@@ -240,11 +240,17 @@ public:
         //- Frontal Area
         virtual scalar A() const = 0;
 
+        //- Particle volume
+        virtual scalar V() const = 0;
+
         //- Return center of mass
         virtual const vector& CoM() const = 0;
 
         //- Return center of mass
         virtual vector& CoM() = 0;
+
+        //- Return the radius give a position of another particle
+        virtual scalar r(const vector& x2) const = 0;
 
 
     // Edit functions
@@ -258,7 +264,7 @@ public:
         virtual void discretize() = 0;
 
         //- Move mesh from (0,0,0) to CoM
-        void moveMesh();
+        virtual void moveMesh();
 };
 
 }   // End IBM namespace

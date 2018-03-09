@@ -11,34 +11,19 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      initialStates;
+    object      turbulenceProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-nParticles	1;
-moving false;
-e_ 1.0;
+simulationType laminar;
 
-flow
+RAS
 {
-    UInf    (0.3 0 0);
-    rhoRef  1.4;
-}
-particle.0
-{
-    particleShape	cylinder;
-    p1	(0 0 -0.1);
-    p2	(0 0 0.1);
-    d	0.1;
-    nTheta	100;
-    delta	0.005;
+    RASModel        SpalartAllmaras;
+
+    turbulence      on;
+
+    printCoeffs     on;
 }
 
-interpolationSchemes
-{
-    U       cellPoint;
-    Uold    cellPoint;
-    p       cellPoint;
-    ibmSource cellPoint;
-}
-
+// ************************************************************************* //

@@ -125,8 +125,8 @@ void Foam::IBM::particleShape::setWeights()
 
 void Foam::IBM::particleShape::setNeighbours()
 {
-    Is_ = List<labelList>(shellCells_.size(), labelList(8,0));
-    Os_ = List<labelList>(shellCells_.size(), labelList(4,0));
+    Is_ = List<labelList>(shellCells_.size(), labelList(8, 0));
+    Os_ = List<labelList>(shellCells_.size(), labelList(4, 0));
 
     forAll(shellCells_, celli)
     {

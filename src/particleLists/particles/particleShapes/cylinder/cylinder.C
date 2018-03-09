@@ -58,17 +58,33 @@ Foam::IBM::particleShapes::cylinder::cylinder
     p1_(dict.lookup("p1")),
     p2_(dict.lookup("p2")),
     centerPoint_((p1_ + p2_)/2.0),
-    axis_(nk_, Zero)
+    axis_(nk_, Zero),
+    centeredAxis_(nk_, Zero)
 {
+    if (!dict_.found("nk_"))
+    {
+        nk_ = 1;
+    }
+
     if (nk_ == 1)
     {
+        if (mesh.nGeometricD() != 2)
+        {
+            FatalErrorInFunction
+                << "Cylinder particle shape with 1 point in axis " << nl
+                << "only valid for 2D meshes"
+                << exit(FatalError);
+        }
+
         axis_[0] = centerPoint_;
+        centeredAxis_[0] - axis_[0] - CoM();
     }
     else
     {
         forAll(axis_, k)
         {
             axis_[k] = p1_ + scalar(k)/(nk_ - 1)*(p2_ - p1_);
+            centeredAxis_[k] = axis_[k] - CoM();
         }
     }
 
@@ -130,18 +146,17 @@ void Foam::IBM::particleShapes::cylinder::discretize()
             {
                 label celli = index(i,j,k);
 
-                baseMesh_[celli] =
-                    axis_[k]
-                  + vector
+                centeredMesh_[celli] =
+                    vector
                     (
                         r*Foam::cos(theta),
                         r*Foam::sin(theta),
                         scalar(0)
                     );
-                centeredMesh_[celli] = baseMesh_[celli] - CoM();
             }
         }
     }
+    this->moveMesh();
 }
 
 
@@ -157,28 +172,31 @@ void Foam::IBM::particleShapes::cylinder::updateCellLists()
     label i = 0;
     forAll(mesh_.cellCentres(), celli)
     {
-        vector diff = mesh_.cellCentres()[celli] - centerPoint_;
-
-        scalar r = mag(diff);
-
-        if (r >= innerR && r <= R)
+        for (label k = 0; k < nk_; k++)
         {
-            shellCells_[i] = celli;
+            vector diff = mesh_.cellCentres()[celli] - axis_[k];
 
-            scalar theta = Foam::atan2(diff.y(),diff.x());
+            scalar r = mag(diff);
 
-            if (theta < 0) theta += twoPi;
+            if (r >= innerR && r <= R)
+            {
+                shellCells_[i] = celli;
 
-            neighbourPoints_[i] =
-            (
-                labelVector
+                scalar theta = Foam::atan2(diff.y(),diff.x());
+
+                if (theta < 0) theta += twoPi;
+
+                neighbourPoints_[i] =
                 (
-                    0,
-                    label(theta*nTheta_/twoPi),
-                    k
-                )
-            );
-            i++;
+                    labelVector
+                    (
+                        0,
+                        label(theta*(nTheta_ - 1)/twoPi),
+                        k
+                    )
+                );
+                i++;
+            }
         }
     }
     shellCells_.resize(i);
@@ -198,6 +216,13 @@ Foam::scalar Foam::IBM::particleShapes::cylinder::A() const
     return d_*mag(p2_ - p1_);
 }
 
+Foam::scalar Foam::IBM::particleShapes::cylinder::V() const
+{
+    return
+        Foam::constant::mathematical::pi
+       *sqr(d_/2.0)*mag(p1_.z() - p2_.z());
+}
+
 const Foam::vector& Foam::IBM::particleShapes::cylinder::CoM() const
 {
     return centerPoint_;
@@ -206,4 +231,16 @@ const Foam::vector& Foam::IBM::particleShapes::cylinder::CoM() const
 Foam::vector& Foam::IBM::particleShapes::cylinder::CoM()
 {
     return centerPoint_;
+}
+
+void Foam::IBM::particleShapes::cylinder::moveMesh()
+{
+    forAll(baseMesh_, celli)
+    {
+        baseMesh_[celli] = centeredMesh_[celli] + CoM();
+    }
+    forAll(axis_, k)
+    {
+        axis_[k] = centeredAxis_[k] + CoM();
+    }
 }

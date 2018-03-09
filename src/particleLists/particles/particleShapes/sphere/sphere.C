@@ -57,6 +57,17 @@ Foam::IBM::particleShapes::sphere::sphere
     d_(readScalar(dict.lookup("d"))),
     center_(dict.lookup("center"))
 {
+    if (!dict_.found("nk_"))
+    {
+        nk_ = nTheta_/2;
+    }
+
+    if (mesh.nGeometricD() != 3)
+    {
+        FatalErrorInFunction
+            << "Sphere particle shape on valid for 3D meshes"
+            << exit(FatalError);
+    }
     discretize();
     updateCellLists();
     calcSf();
@@ -134,18 +145,17 @@ void Foam::IBM::particleShapes::sphere::discretize()
 
                 scalar phi = dPhi*scalar(k);
 
-                baseMesh_[celli] =
-                    center_
-                  + vector
+                centeredMesh_[celli] =
+                    vector
                     (
                         r*Foam::cos(theta)*Foam::sin(phi),
                         r*Foam::sin(theta)*Foam::sin(phi),
                         r*Foam::cos(phi)
                     );
-                centeredMesh_[celli] = baseMesh_[celli] - CoM();
             }
         }
     }
+    this->moveMesh();
 }
 
 
@@ -204,6 +214,11 @@ Foam::scalar Foam::IBM::particleShapes::sphere::D() const
 Foam::scalar Foam::IBM::particleShapes::sphere::A() const
 {
     return Foam::constant::mathematical::pi*sqr(d_/2.0);
+}
+
+Foam::scalar Foam::IBM::particleShapes::sphere::V() const
+{
+    return 1.0/6.0*Foam::constant::mathematical::pi*pow3(d_);
 }
 
 const Foam::vector& Foam::IBM::particleShapes::sphere::CoM() const

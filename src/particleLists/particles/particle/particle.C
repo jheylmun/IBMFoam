@@ -166,9 +166,9 @@ Foam::IBM::particle::particle
 //             S_
 //         )
 //     ),
-    v_(Zero),
-    omega_(Zero),
-    rho_(0.0),
+    v_(dict.template lookupOrDefault<vector>("v", Zero)),
+    omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
+    rho_(readScalar(dict.lookup("rho"))),
     integratedForce_(Zero),
     origProc_(-1)
 {
@@ -181,6 +181,15 @@ Foam::IBM::particle::~particle()
 
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
+
+bool Foam::IBM::particle::onMesh() const
+{
+    if (shape_->shellCells().size() == 0)
+    {
+        return false;
+    }
+    return true;
+}
 
 void Foam::IBM::particle::forcing
 (
@@ -285,5 +294,7 @@ Foam::scalar Foam::IBM::particle::Cd() const
 void Foam::IBM::particle::update()
 {
     shape_->moveMesh();
+    shape_->updateCellLists();
+    setProcs();
     shape_->updateCellLists();
 }

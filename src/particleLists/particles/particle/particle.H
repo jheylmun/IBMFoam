@@ -197,10 +197,25 @@ public:
         };
     // Access
 
+        //- Is the particle on the mesh
+        bool onMesh() const;
+
         //- Const access to particle list
         const particleList<particle>& pList() const
         {
             return pList_;
+        }
+
+        //- Return the particle mass
+        scalar r(const vector& x2) const
+        {
+            return shape_->r(x2);
+        }
+
+        //- Return the particle mass
+        scalar mass() const
+        {
+            return shape_->V()*rho_;
         }
 
         //- Const access to linear velocity
@@ -249,6 +264,12 @@ public:
             return shape_->CoM();
         }
 
+        vector F() const
+        {
+            return integratedForce_;
+        }
+
+
     // Edit
 
         //- Calcluate needed forcing on fluid
@@ -260,20 +281,15 @@ public:
             volVectorField& F
         );
 
+        //- Calculate total stress on particle surface
         void integrateSurfaceStress
         (
             const surfaceSymmTensorField& tauf,
             const surfaceScalarField& p
         );
 
+        //- Calculate and return the drag coefficient
         scalar Cd() const;
-
-
-
-        //- Advance in time, update velocity based on force from fluid, and
-        //  move particle in space.
-        virtual void operator++()
-        {}
 
         //- Update weights, cell lists, and mesh
         void update();

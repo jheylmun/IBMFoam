@@ -11,34 +11,14 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      initialStates;
+    object      transportProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-nParticles	1;
-moving false;
-e_ 1.0;
+transportModel  Newtonian;
 
-flow
-{
-    UInf    (0.3 0 0);
-    rhoRef  1.4;
-}
-particle.0
-{
-    particleShape	cylinder;
-    p1	(0 0 -0.1);
-    p2	(0 0 0.1);
-    d	0.1;
-    nTheta	100;
-    delta	0.005;
-}
+rho             [1 -3 0 0 0 0 0] 1;
 
-interpolationSchemes
-{
-    U       cellPoint;
-    Uold    cellPoint;
-    p       cellPoint;
-    ibmSource cellPoint;
-}
+nu              [0 2 -1 0 0 0 0] 1e-3;
 
+// ************************************************************************* //

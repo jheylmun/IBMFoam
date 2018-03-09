@@ -76,11 +76,17 @@ class particleList
         scalar rhoRef_;
         scalar pRef_;
 
+        //- Coefficient of restitution
+        scalar e_;
+
         //- Copy of old velocity field
         volVectorField Uold_;
 
         //- IBM source terms (advection, pressure, and viscous stress)
         volVectorField S_;
+
+        // Switche if particles are moving
+        Switch moving_;
 
 
     // Priavte functions
@@ -100,6 +106,9 @@ class particleList
 
         //- Return rho if specified otherwise rhoRef
         tmp<volScalarField> rho() const;
+
+        //- Calculate collisions
+        void computeCollisions();
 
 
 public:
@@ -171,10 +180,7 @@ public:
 
         //- Advance in time, update velocities based on force from fluid, and
         //  move particles in space.
-        void operator++()
-        {
-            integrateSurfaceStresses();
-        }
+        void operator++();
 
     //- regIOobject functions
 

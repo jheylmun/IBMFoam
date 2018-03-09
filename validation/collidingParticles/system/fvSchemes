@@ -10,35 +10,43 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "constant";
-    object      initialStates;
+    location    "system";
+    object      fvSchemes;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-nParticles	1;
-moving false;
-e_ 1.0;
-
-flow
+ddtSchemes
 {
-    UInf    (0.3 0 0);
-    rhoRef  1.4;
+    default         Euler;
 }
-particle.0
+
+gradSchemes
 {
-    particleShape	cylinder;
-    p1	(0 0 -0.1);
-    p2	(0 0 0.1);
-    d	0.1;
-    nTheta	100;
-    delta	0.005;
+    default         leastSquares;
+}
+
+divSchemes
+{
+    default         none;
+    div(phi,U)      bounded Gauss linearUpwind phi;
+    div(M&U)        Gauss linearUpwind phi;
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+}
+
+laplacianSchemes
+{
+    default         Gauss linear corrected;
 }
 
 interpolationSchemes
 {
-    U       cellPoint;
-    Uold    cellPoint;
-    p       cellPoint;
-    ibmSource cellPoint;
+    default         linear;
 }
 
+snGradSchemes
+{
+    default         corrected;
+}
+
+
+// ************************************************************************* //

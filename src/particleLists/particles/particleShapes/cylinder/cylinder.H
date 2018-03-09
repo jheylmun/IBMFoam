@@ -68,6 +68,9 @@ class cylinder
         //- Cylinder axis
         vectorList axis_;
 
+        //- Centered axis_;
+        vectorList centeredAxis_;
+
         virtual void calcSf();
 
 
@@ -105,11 +108,23 @@ public:
         //- Frontal area
         virtual scalar A() const;
 
+        //- Particle volume
+        virtual scalar V() const;
+
         //- Center of mass
         virtual const vector& CoM() const;
 
         //- Center of mass
         virtual vector& CoM();
+
+        //- Move mesh from (0,0,0) to CoM
+        virtual void moveMesh();
+
+        //- Return the radius give a position of another particle
+        virtual scalar r(const vector& x2) const
+        {
+            return d_/2.0;
+        }
 };
 
 }   // End particleShapes namespace

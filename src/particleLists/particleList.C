@@ -178,6 +178,43 @@ Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::rho() const
 }
 
 
+template<class pType>
+void Foam::IBM::particleList<pType>::computeCollisions()
+{
+    forAll(*this, i)
+    {
+        particle& p1 =(*this)[i];
+        const vector& x1 = p1.CoM();
+        vector& v1 = p1.v();
+        scalar mass1 = p1.mass();
+
+        for (label j = i + 1; j < (*this).size(); j++)
+        {
+            particle& p2 =(*this)[j];
+            const vector& x2 = p2.CoM();
+            vector& v2 = p2.v();
+            scalar mass2 = p2.mass();
+
+            vector x12 = x1 - x2;
+            vector v12 = v1 - v2;
+
+            scalar r1 = p1.r(x2);
+            scalar r2 = p2.r(x1);
+
+            if (mag(x12) <= (r1 + r2) && (x12 & v12) < 0)
+            {
+                scalar M = mass1 + mass2;
+                scalar x12Dotv12 = x12 & v12;
+                scalar x12Sqr = magSqr(x12);
+
+                v1 -= 2.0*mass2/M*x12Dotv12/x12Sqr*x12*e_;
+                v2 += 2.0*mass1/M*x12Dotv12/x12Sqr*x12*e_;
+            }
+        }
+    }
+}
+
+
 // * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
 
 template<class pType>
@@ -224,6 +261,7 @@ Foam::IBM::particleList<pType>::particleList
     (
         dict_.subDict("flow").template lookupOrDefault<scalar>("pInf", 0.0)
     ),
+    e_(readScalar(dict_.lookup("e"))),
     Uold_
     (
         IOobject
@@ -251,7 +289,8 @@ Foam::IBM::particleList<pType>::particleList
         ),
         mesh,
         dimensionedVector("zero", dimAcceleration, Zero)
-    )
+    ),
+    moving_(dict_.lookup("moving"))
 {
     PtrList<pType>& pList = *this;
     pList.resize(readLabel(dict_.lookup("nParticles")));
@@ -397,6 +436,38 @@ bool Foam::IBM::particleList<pType>::writeData(Ostream& os) const
     IOField<scalar> cd(fieldIOobject("Cd",IOobject::NO_READ),(*this).size());
     this->Cd(cd);
     forAll(cd, i)
-        os << "Cd." << Foam::name(i) << ": " << cd[i] << endl;
+        os << "     Cd." << Foam::name(i) << ": " << cd[i] << endl;
     return os.good();
+}
+
+
+template<class pType>
+void Foam::IBM::particleList<pType>::operator++()
+{
+    computeCollisions();
+    integrateSurfaceStresses();
+    scalar dt = mesh_.time().deltaT().value();
+
+    vector avgV = Zero;
+    scalar avgP = 0.0;
+    forAll(*this, i)
+    {
+        particle& p =(*this)[i];
+        if (!p.onMesh())
+        {
+            p.v() = Zero;
+            continue;
+        }
+
+        p.CoM() += dt*p.v();
+        p.v() += dt*p.F()/p.mass();
+
+        p.update();
+
+        avgV += p.v();
+        avgP += mag(p.v())*p.mass();
+    }
+
+    Info<< "    Average velocity: " << avgV << nl
+        << "    Average momentum: " << avgP << endl;
 }
