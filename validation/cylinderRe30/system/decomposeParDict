@@ -15,7 +15,11 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+<<<<<<< HEAD
 numberOfSubdomains  7;
+=======
+numberOfSubdomains  15;
+>>>>>>> 68d28de2d5de704c0e238a48af4d8437fb012910
 
 method          scotch;
 

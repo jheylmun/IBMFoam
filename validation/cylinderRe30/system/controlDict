@@ -29,9 +29,9 @@ deltaT          .001;
 
 writeControl    adjustableRunTime;
 
-writeInterval   .1;
+writeInterval   0.5;
 
-purgeWrite      20;
+purgeWrite      100;
 
 writeFormat     ascii;
 

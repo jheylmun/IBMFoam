@@ -31,7 +31,7 @@ particle.0
     p2	(0 0 0.1);
     d	0.1;
     nTheta	100;
-    delta	0.005;
+    delta	0.004;
 }
 
 interpolationSchemes
