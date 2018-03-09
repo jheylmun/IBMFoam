@@ -17,7 +17,6 @@ FoamFile
 
 nParticles	3;
 moving true;
-
 e 0.9;
 
 flow
@@ -34,7 +33,7 @@ particle.0
     p2	(0 0 0.1);
     d	0.1;
     nTheta	100;
-    delta	0.011;
+    delta	0.005;
 }
 
 particle.1
@@ -46,7 +45,7 @@ particle.1
     p2	(0.2 0.05 0.1);
     d	0.1;
     nTheta	100;
-    delta	0.011;
+    delta	0.005;
 }
 
 particle.2
@@ -58,7 +57,7 @@ particle.2
     p2	(0.1 -0.15 0.1);
     d	0.1;
     nTheta	100;
-    delta	0.011;
+    delta	0.005;
 }
 
 interpolationSchemes

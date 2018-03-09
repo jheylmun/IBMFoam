@@ -453,11 +453,11 @@ void Foam::IBM::particleList<pType>::operator++()
     forAll(*this, i)
     {
         particle& p =(*this)[i];
-        if (!p.onMesh())
-        {
-            p.v() = Zero;
-            continue;
-        }
+//         if (!p.onMesh())
+//         {
+//             p.v() = Zero;
+//             continue;
+//         }
 
         p.CoM() += dt*p.v();
         p.v() += dt*p.F()/p.mass();
