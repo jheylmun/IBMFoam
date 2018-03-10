@@ -47,20 +47,33 @@ SourceFiles
 #include "fvc.H"
 #include "runTimeSelectionTables.H"
 #include "particle.H"
-#include "regIOobject.H"
+#include "objectRegistry.H"
 #include "cloud.H"
+#include "particle.H"
 
 
 namespace Foam
 {
+
+class IOposition;
+
 namespace IBM
 {
 
-template<class pType>
+template<class cloudType>
+class IOposition;
+
+Ostream& operator<<
+(
+    Ostream&,
+    const particleList&
+);
+
+
 class particleList
 :
-    public regIOobject,
-    public PtrList<pType>
+    public cloud,
+    public PtrList<particle>
 {
     // Private Data
 
@@ -91,13 +104,6 @@ class particleList
 
     // Priavte functions
 
-        //- Create IOobject
-        IOobject fieldIOobject
-        (
-            const word& fileName,
-            const IOobject::readOption& r
-        ) const;
-
         //- Return the effective viscous stress (laminar + turbulent).
         tmp<volSymmTensorField> devRhoReff() const;
 
@@ -112,6 +118,8 @@ class particleList
 
 
 public:
+
+    friend class IOposition<particleList>;
 
     // Constructors
 
@@ -161,7 +169,7 @@ public:
         //- Freestream velocity
         scalar pRef() const
         {
-            return pRef;
+            return pRef_;
         }
 
     // Edit
@@ -182,10 +190,41 @@ public:
         //  move particles in space.
         void operator++();
 
-    //- regIOobject functions
 
-        virtual bool write() const;
-        virtual bool writeData(Ostream& os) const;
+    // Read
+
+        //- Helper to construct IOobject for field and current time.
+        IOobject fieldIOobject
+        (
+            const word& fieldName,
+            const IOobject::readOption r
+        ) const;
+
+
+    //- Write functions
+
+        //- Write the field data for the cloud of particles Dummy at
+        //  this level.
+        virtual void writeFields() const;
+
+        //- Write using given format, version and compression.
+        //  Only writes the cloud file if the Cloud isn't empty
+        virtual bool writeObject
+        (
+            IOstream::streamFormat fmt,
+            IOstream::versionNumber ver,
+            IOstream::compressionType cmp,
+            const bool valid
+        ) const;
+
+
+    // Ostream operator
+
+        friend Ostream& operator<<
+        (
+            Ostream&,
+            const particleList&
+        );
 
 
 };
@@ -194,8 +233,5 @@ public:
 
 }   // End Foam namespace
 
-#if NoRepository
-#include    "particleList.C"
-#endif
 
 #endif

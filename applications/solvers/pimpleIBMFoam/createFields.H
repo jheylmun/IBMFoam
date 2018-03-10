@@ -42,7 +42,7 @@ autoPtr<incompressible::turbulenceModel> turbulence
     incompressible::turbulenceModel::New(U, phi, laminarTransport)
 );
 
-IBM::stationaryParticleList particles
+IBM::particleList particles
 (
     mesh
 );

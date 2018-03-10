@@ -17,11 +17,11 @@ FoamFile
 convertToMeters 0.1;
 
 D           1.0;
-ptsPerD     40;
+ptsPerD     15;
 
 nDvert      5.0;
 nDup        5.0;
-nDdown      15.0;
+nDdown      1.0;
 
 xCenter     0.0;
 xMin        #calc "$xCenter-$D*$nDup";

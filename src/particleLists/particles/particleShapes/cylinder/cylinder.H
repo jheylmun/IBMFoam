@@ -112,10 +112,10 @@ public:
         virtual scalar V() const;
 
         //- Center of mass
-        virtual const vector& CoM() const;
+        virtual const vector& position() const;
 
         //- Center of mass
-        virtual vector& CoM();
+        virtual vector& position();
 
         //- Move mesh from (0,0,0) to CoM
         virtual void moveMesh();

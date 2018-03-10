@@ -32,7 +32,7 @@ Description
 #include "turbulentTransportModel.H"
 #include "pimpleControl.H"
 #include "fvOptions.H"
-#include "particleListsFwd.H"
+#include "particleList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
         ++particles;
 
-        particles.writeData(Info);
+//         particles.writeData(Info);
         runTime.write();
 
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"

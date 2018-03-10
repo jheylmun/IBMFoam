@@ -120,7 +120,7 @@ void Foam::IBM::particleShape::setWeights()
         WFromLocal_[celli] = W;
     }
 
-    centerIndex_ = mesh_.findCell(CoM());
+    centerIndex_ = mesh_.findCell(position());
 }
 
 void Foam::IBM::particleShape::setNeighbours()
@@ -209,6 +209,6 @@ void Foam::IBM::particleShape::moveMesh()
 {
     forAll(baseMesh_, celli)
     {
-        baseMesh_[celli] = centeredMesh_[celli] + CoM();
+        baseMesh_[celli] = centeredMesh_[celli] + position();
     }
 }

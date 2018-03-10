@@ -26,27 +26,9 @@ License
 
 
 // * * * * * * * * * * * * Protected Member functions  * * * * * * * * * * * //
-template<class pType>
-Foam::IOobject Foam::IBM::particleList<pType>::fieldIOobject
-(
-    const word& fileName,
-    const IOobject::readOption& r
-) const
-{
-    return IOobject
-    (
-        fileName,
-        mesh_.time().timePath()/"IBM",
-        mesh_,
-        r,
-        IOobject::AUTO_WRITE,
-        false
-    );
-}
 
-template<class pType>
 Foam::tmp<Foam::volSymmTensorField>
-Foam::IBM::particleList<pType>::devRhoReff() const
+Foam::IBM::particleList::devRhoReff() const
 {
     typedef compressible::turbulenceModel cmpTurbModel;
     typedef incompressible::turbulenceModel icoTurbModel;
@@ -107,8 +89,7 @@ Foam::IBM::particleList<pType>::devRhoReff() const
     }
 }
 
-template<class pType>
-Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::mu() const
+Foam::tmp<Foam::volScalarField> Foam::IBM::particleList::mu() const
 {
     if (mesh_.foundObject<fluidThermo>(basicThermo::dictName))
     {
@@ -151,8 +132,7 @@ Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::mu() const
     }
 }
 
-template<class pType>
-Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::rho() const
+Foam::tmp<Foam::volScalarField> Foam::IBM::particleList::rho() const
 {
     if (!mesh_.foundObject<volScalarField>("thermo:rho"))
     {
@@ -178,20 +158,20 @@ Foam::tmp<Foam::volScalarField> Foam::IBM::particleList<pType>::rho() const
 }
 
 
-template<class pType>
-void Foam::IBM::particleList<pType>::computeCollisions()
+void Foam::IBM::particleList::computeCollisions()
 {
-    forAll(*this, i)
+    PtrList<particle>& pList = *this;
+    forAll(pList, i)
     {
-        particle& p1 =(*this)[i];
-        const vector& x1 = p1.CoM();
+        particle& p1 = pList[i];
+        const vector& x1 = p1.position();
         vector& v1 = p1.v();
         scalar mass1 = p1.mass();
 
-        for (label j = i + 1; j < (*this).size(); j++)
+        for (label j = i + 1; j < pList.size(); j++)
         {
-            particle& p2 =(*this)[j];
-            const vector& x2 = p2.CoM();
+            particle& p2 = pList[j];
+            const vector& x2 = p2.position();
             vector& v2 = p2.v();
             scalar mass2 = p2.mass();
 
@@ -217,25 +197,17 @@ void Foam::IBM::particleList<pType>::computeCollisions()
 
 // * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
 
-template<class pType>
-Foam::IBM::particleList<pType>::particleList
+Foam::IBM::particleList::particleList
 (
     const fvMesh& mesh
 )
 :
-    regIOobject
+    cloud
     (
-        IOobject
-        (
-            "IBMparticles",
-            mesh.time().timeName(),
-            cloud::prefix,
-            mesh,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        )
+        mesh,
+        "IBMparticles"
     ),
-    PtrList<pType>(),
+    PtrList<particle>(),
     mesh_(mesh),
     dict_
     (
@@ -292,7 +264,7 @@ Foam::IBM::particleList<pType>::particleList
     ),
     moving_(dict_.lookup("moving"))
 {
-    PtrList<pType>& pList = *this;
+    PtrList<particle>& pList = *this;
     pList.resize(readLabel(dict_.lookup("nParticles")));
 
     for (label i = 0; i < pList.size(); i++)
@@ -300,7 +272,7 @@ Foam::IBM::particleList<pType>::particleList
         pList.set
         (
             i,
-            new pType
+            new particle
             (
                 *this,
                 dict_.subDict
@@ -319,15 +291,13 @@ Foam::IBM::particleList<pType>::particleList
 }
 
 
-template<class pType>
-Foam::IBM::particleList<pType>::~particleList()
+Foam::IBM::particleList::~particleList()
 {}
 
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
 
-template<class pType>
-Foam::tmp<Foam::volVectorField> Foam::IBM::particleList<pType>::forcing
+Foam::tmp<Foam::volVectorField> Foam::IBM::particleList::forcing
 (
     const volVectorField& S
 )
@@ -356,7 +326,7 @@ Foam::tmp<Foam::volVectorField> Foam::IBM::particleList<pType>::forcing
     );
 
     volVectorField& F = tmpF.ref();
-    PtrList<pType>& pList = *this;
+    PtrList<particle>& pList = *this;
 
     const volVectorField& U = mesh_.lookupObject<volVectorField>("U");
     Uold_ = U.oldTime();
@@ -374,10 +344,9 @@ Foam::tmp<Foam::volVectorField> Foam::IBM::particleList<pType>::forcing
 
 }
 
-template<class pType>
-void Foam::IBM::particleList<pType>::integrateSurfaceStresses()
+void Foam::IBM::particleList::integrateSurfaceStresses()
 {
-    PtrList<pType>& pList = *this;
+    PtrList<particle>& pList = *this;
 
     const volScalarField& p = mesh_.lookupObject<volScalarField>("p");
     dimensionedScalar rho("rho", dimDensity, rhoRef());
@@ -397,10 +366,9 @@ void Foam::IBM::particleList<pType>::integrateSurfaceStresses()
     }
 }
 
-template<class pType>
-void Foam::IBM::particleList<pType>::Cd(IOField<scalar>& Cds) const
+void Foam::IBM::particleList::Cd(IOField<scalar>& Cds) const
 {
-    const PtrList<pType>& pList = *this;
+    const PtrList<particle>& pList = *this;
 
     forAll(pList, particlei)
     {
@@ -408,58 +376,26 @@ void Foam::IBM::particleList<pType>::Cd(IOField<scalar>& Cds) const
     }
 }
 
-template<class pType>
-bool Foam::IBM::particleList<pType>::write() const
+void Foam::IBM::particleList::operator++()
 {
-    label np = (*this).size();
+    PtrList<particle>& pList = *this;
 
-    IOField<vector> pos(fieldIOobject("position",IOobject::NO_READ),np);
-    IOField<vector> v(fieldIOobject("v",IOobject::NO_READ),np);
-
-    forAll(*this, i)
-    {
-        const particle& p =(*this)[i];
-
-        pos[i] = p.CoM();
-        v[i] = p.v();
-    }
-    pos.write();
-    v.write();
-
-    return true;
-
-}
-
-template<class pType>
-bool Foam::IBM::particleList<pType>::writeData(Ostream& os) const
-{
-    IOField<scalar> cd(fieldIOobject("Cd",IOobject::NO_READ),(*this).size());
-    this->Cd(cd);
-    forAll(cd, i)
-        os << "     Cd." << Foam::name(i) << ": " << cd[i] << endl;
-    return os.good();
-}
-
-
-template<class pType>
-void Foam::IBM::particleList<pType>::operator++()
-{
     computeCollisions();
     integrateSurfaceStresses();
     scalar dt = mesh_.time().deltaT().value();
 
     vector avgV = Zero;
     scalar avgP = 0.0;
-    forAll(*this, i)
+    forAll(pList, i)
     {
-        particle& p =(*this)[i];
+        particle& p = pList[i];
 //         if (!p.onMesh())
 //         {
 //             p.v() = Zero;
 //             continue;
 //         }
 
-        p.CoM() += dt*p.v();
+        p.position() += dt*p.v();
         p.v() += dt*p.F()/p.mass();
 
         p.update();

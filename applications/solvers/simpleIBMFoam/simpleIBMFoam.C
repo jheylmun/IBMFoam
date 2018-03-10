@@ -35,7 +35,7 @@ Description
 #include "turbulentTransportModel.H"
 #include "simpleControl.H"
 #include "fvOptions.H"
-#include "particleListsFwd.H"
+#include "particleList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

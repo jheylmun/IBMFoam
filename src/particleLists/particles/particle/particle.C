@@ -83,7 +83,7 @@ void Foam::IBM::particle::interpolateFToMesh
 
 void Foam::IBM::particle::setProcs()
 {
-    if (mesh_.findCell(shape_->CoM()) != -1)
+    if (mesh_.findCell(shape_->position()) != -1)
     {
         origProc_ = Pstream::myProcNo();
     }
@@ -120,7 +120,7 @@ void Foam::IBM::particle::setProcs()
 
 Foam::IBM::particle::particle
 (
-    const particleList<particle>& pList,
+    const particleList& pList,
     const dictionary& dict,
     const volVectorField& Uold,
     const volVectorField& S
@@ -128,6 +128,7 @@ Foam::IBM::particle::particle
 :
     pList_(pList),
     mesh_(pList_.mesh()),
+    active_(true),
     shape_(particleShape::New(mesh_,dict)),
     U_(mesh_.lookupObject<volVectorField>("U")),
     U0_(Uold),
@@ -181,15 +182,6 @@ Foam::IBM::particle::~particle()
 
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
-
-bool Foam::IBM::particle::onMesh() const
-{
-    if (shape_->shellCells().size() == 0)
-    {
-        return false;
-    }
-    return true;
-}
 
 void Foam::IBM::particle::forcing
 (

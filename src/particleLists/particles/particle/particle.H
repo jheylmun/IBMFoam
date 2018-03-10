@@ -37,6 +37,7 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+#include "IOstream.H"
 #include "vectorList.H"
 #include "symmTensorList.H"
 #include "labelVector.H"
@@ -55,21 +56,29 @@ namespace Foam
 {
 namespace IBM
 {
-
-template<class pType>
 class particleList;
+class particle;
+
+Ostream& operator<<(Ostream&, const particle&);
 
 
 class particle
 {
+    //- Size in bytes of the fields
+    static const std::size_t sizeofFields_;
+
+
 protected:
 // Protected Data
 
     //- Constant access to list of particles
-    const particleList<particle>& pList_;
+    const particleList& pList_;
 
     //- fvMesh
     const fvMesh& mesh_;
+
+    //- Is the partice active
+    bool active_;
 
     //- Particle shape containing mesh
     autoPtr<particleShape> shape_;
@@ -156,7 +165,7 @@ public:
         // Construct particle from dictionary entry
         particle
         (
-            const particleList<particle>& pList,
+            const particleList& pList,
             const dictionary& dict,
             const volVectorField& Uold,
             const volVectorField& S
@@ -197,11 +206,13 @@ public:
         };
     // Access
 
-        //- Is the particle on the mesh
-        bool onMesh() const;
+        bool active() const
+        {
+            return active_;
+        }
 
         //- Const access to particle list
-        const particleList<particle>& pList() const
+        const particleList& pList() const
         {
             return pList_;
         }
@@ -210,6 +221,12 @@ public:
         scalar r(const vector& x2) const
         {
             return shape_->r(x2);
+        }
+
+        //- return effective diameter
+        scalar d() const
+        {
+            return shape_->D();
         }
 
         //- Return the particle mass
@@ -254,14 +271,14 @@ public:
             return rho_;
         }
 
-        const vector& CoM() const
+        const vector& position() const
         {
-            return shape_->CoM();
+            return shape_->position();
         }
 
-        vector& CoM()
+        vector& position()
         {
-            return shape_->CoM();
+            return shape_->position();
         }
 
         vector F() const
@@ -293,6 +310,17 @@ public:
 
         //- Update weights, cell lists, and mesh
         void update();
+
+        static void writeFields(const particleList& c);
+
+
+    // Ostream Operator
+
+        friend Ostream& operator<<
+        (
+            Ostream&,
+            const particle&
+        );
 };
 
 }   // End IBM namespace
@@ -300,7 +328,7 @@ public:
 }   // End Foam namespace
 
 #if NoRepository
-#include    "particleTmp.H"
+    #include    "particleTmp.H"
 #endif
 
 #endif

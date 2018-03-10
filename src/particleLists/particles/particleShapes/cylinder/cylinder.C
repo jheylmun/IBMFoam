@@ -77,14 +77,14 @@ Foam::IBM::particleShapes::cylinder::cylinder
         }
 
         axis_[0] = centerPoint_;
-        centeredAxis_[0] - axis_[0] - CoM();
+        centeredAxis_[0] - axis_[0] - position();
     }
     else
     {
         forAll(axis_, k)
         {
             axis_[k] = p1_ + scalar(k)/(nk_ - 1)*(p2_ - p1_);
-            centeredAxis_[k] = axis_[k] - CoM();
+            centeredAxis_[k] = axis_[k] - position();
         }
     }
 
@@ -223,12 +223,12 @@ Foam::scalar Foam::IBM::particleShapes::cylinder::V() const
        *sqr(d_/2.0)*mag(p1_.z() - p2_.z());
 }
 
-const Foam::vector& Foam::IBM::particleShapes::cylinder::CoM() const
+const Foam::vector& Foam::IBM::particleShapes::cylinder::position() const
 {
     return centerPoint_;
 }
 
-Foam::vector& Foam::IBM::particleShapes::cylinder::CoM()
+Foam::vector& Foam::IBM::particleShapes::cylinder::position()
 {
     return centerPoint_;
 }
@@ -237,10 +237,10 @@ void Foam::IBM::particleShapes::cylinder::moveMesh()
 {
     forAll(baseMesh_, celli)
     {
-        baseMesh_[celli] = centeredMesh_[celli] + CoM();
+        baseMesh_[celli] = centeredMesh_[celli] + position();
     }
     forAll(axis_, k)
     {
-        axis_[k] = centeredAxis_[k] + CoM();
+        axis_[k] = centeredAxis_[k] + position();
     }
 }

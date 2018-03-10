@@ -221,12 +221,12 @@ Foam::scalar Foam::IBM::particleShapes::sphere::V() const
     return 1.0/6.0*Foam::constant::mathematical::pi*pow3(d_);
 }
 
-const Foam::vector& Foam::IBM::particleShapes::sphere::CoM() const
+const Foam::vector& Foam::IBM::particleShapes::sphere::position() const
 {
     return center_;
 }
 
-Foam::vector& Foam::IBM::particleShapes::sphere::CoM()
+Foam::vector& Foam::IBM::particleShapes::sphere::position()
 {
     return center_;
 }

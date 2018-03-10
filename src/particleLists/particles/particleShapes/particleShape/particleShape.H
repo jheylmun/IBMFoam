@@ -244,10 +244,10 @@ public:
         virtual scalar V() const = 0;
 
         //- Return center of mass
-        virtual const vector& CoM() const = 0;
+        virtual const vector& position() const = 0;
 
         //- Return center of mass
-        virtual vector& CoM() = 0;
+        virtual vector& position() = 0;
 
         //- Return the radius give a position of another particle
         virtual scalar r(const vector& x2) const = 0;
