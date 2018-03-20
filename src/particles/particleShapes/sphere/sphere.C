@@ -19,7 +19,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "cylinder.H"
+#include "sphere.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
@@ -28,93 +28,86 @@ License
 
 namespace Foam
 {
-namespace IBM
-{
 namespace particleShapes
 {
-    defineTypeNameAndDebug(cylinder, 0);
+    defineTypeNameAndDebug(sphere, 0);
 
     addToRunTimeSelectionTable
     (
         particleShape,
-        cylinder,
+        sphere,
         dictionary
     );
-}
 }
 }
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::IBM::particleShapes::cylinder::cylinder
+Foam::particleShapes::sphere::sphere
 (
-    const fvMesh& mesh,
-    const dictionary& dict
+    const polyMesh& mesh,
+    const dictionary& dict,
+    const vector& center
 )
 :
-    particleShape(mesh,dict),
-    d_(readScalar(dict.lookup("d"))),
-    p1_(dict.lookup("p1")),
-    p2_(dict.lookup("p2")),
-    centerPoint_((p1_ + p2_)/2.0),
-    axis_(nk_, Zero),
-    centeredAxis_(nk_, Zero)
+    particleShape(mesh, dict, center),
+    d_(readScalar(dict.lookup("d")))
 {
     if (!dict_.found("nk_"))
     {
-        nk_ = 1;
+        nk_ = nTheta_/2;
     }
 
-    if (nk_ == 1)
+    if (mesh.nGeometricD() != 3)
     {
-        if (mesh.nGeometricD() != 2)
-        {
-            FatalErrorInFunction
-                << "Cylinder particle shape with 1 point in axis " << nl
-                << "only valid for 2D meshes"
-                << exit(FatalError);
-        }
-
-        axis_[0] = centerPoint_;
-        centeredAxis_[0] - axis_[0] - position();
+        FatalErrorInFunction
+            << "Sphere particle shape on valid for 3D meshes"
+            << exit(FatalError);
     }
-    else
-    {
-        forAll(axis_, k)
-        {
-            axis_[k] = p1_ + scalar(k)/(nk_ - 1)*(p2_ - p1_);
-            centeredAxis_[k] = axis_[k] - position();
-        }
-    }
-
     discretize();
     updateCellLists();
     calcSf();
 }
 
-void Foam::IBM::particleShapes::cylinder::calcSf()
+void Foam::particleShapes::sphere::calcSf()
 {
     scalar r = d_/2.0;
     scalar Pi = constant::mathematical::pi;
     scalar dTheta = 2.0*Pi/scalar(nTheta_);
-    scalar dk = mag(p1_ - p2_)/(max(1,nk_ - 1));
+    scalar dPhi = Pi/scalar(nk_ - 1);
 
     for (label i = 0; i < nTheta_; i++)
     {
         scalar theta = dTheta*scalar(i);
+
         for (label k = 0; k < nk_; k++)
         {
+            scalar phi = dPhi*scalar(k);
+
             Sf_[index2(i,k)] =
                -vector
                 (
-                    cos(theta),
-                    sin(theta),
-                    scalar(0)
-                )*r*dTheta*dk;
-            if (nk_ != 1 && (k == 0 || k == nk_ - 1))
+                    Foam::cos(theta)*Foam::sin(phi),
+                    Foam::sin(theta)*Foam::sin(phi),
+                    Foam::cos(phi)
+                )*Foam::sqr(r)*dTheta;
+
+            if (k == 0)
             {
-                Sf_[index2(i,k)] /= 2.0;
+                Sf_[index2(i,k)] *= (cos(phi) - cos(phi + dPhi/2.0));
+            }
+            else if (k == nk_ - 1)
+            {
+                Sf_[index2(i,k)] *= (cos(phi - dPhi/2.0) - cos(phi));
+            }
+            else
+            {
+                Sf_[index2(i,k)] *=
+                    (
+                        cos(phi - dPhi/2.0)
+                      - cos(phi + dPhi/2.0)
+                    );
             }
         }
     }
@@ -122,18 +115,19 @@ void Foam::IBM::particleShapes::cylinder::calcSf()
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-Foam::IBM::particleShapes::cylinder::~cylinder()
+Foam::particleShapes::sphere::~sphere()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void Foam::IBM::particleShapes::cylinder::discretize()
+void Foam::particleShapes::sphere::discretize()
 {
     scalar Pi = constant::mathematical::pi;
     scalar R = d_/2.0;
     vector delta(-1*delta_, 0, delta_);
     scalar dTheta(2.0*Pi/(nTheta_));
+    scalar dPhi = Pi/(nk_ - 1);
 
     for (label i = 0; i < nRadial_; i++)
     {
@@ -146,25 +140,27 @@ void Foam::IBM::particleShapes::cylinder::discretize()
             {
                 label celli = index(i,j,k);
 
+                scalar phi = dPhi*scalar(k);
+
                 centeredMesh_[celli] =
                     vector
                     (
-                        r*Foam::cos(theta),
-                        r*Foam::sin(theta),
-                        scalar(0)
+                        r*Foam::cos(theta)*Foam::sin(phi),
+                        r*Foam::sin(theta)*Foam::sin(phi),
+                        r*Foam::cos(phi)
                     );
             }
         }
     }
-    this->moveMesh();
+    this->moveMesh(this->center_);
 }
 
 
-void Foam::IBM::particleShapes::cylinder::updateCellLists()
+void Foam::particleShapes::sphere::updateCellLists()
 {
     scalar R = d_/2.0;
     scalar innerR = R - delta_;
-    scalar twoPi = constant::mathematical::twoPi;
+    scalar Pi = constant::mathematical::pi;
 
     shellCells_ = labelList(mesh_.nCells(), -1);
     neighbourPoints_ = List<labelVector>(mesh_.nCells(), Zero);
@@ -172,31 +168,32 @@ void Foam::IBM::particleShapes::cylinder::updateCellLists()
     label i = 0;
     forAll(mesh_.cellCentres(), celli)
     {
-        for (label k = 0; k < nk_; k++)
+        vector diff =
+            mesh_.cellCentres()[celli]
+          - this->center_;
+
+        scalar r = mag(diff);
+
+        if (r >= innerR && r <= R)
         {
-            vector diff = mesh_.cellCentres()[celli] - axis_[k];
+            shellCells_[i] = celli;
 
-            scalar r = mag(diff);
+            scalar theta = Foam::atan2(diff.y(),diff.x());
+            scalar phi = Foam::acos(diff.z()/r);
 
-            if (r >= innerR && r <= R)
-            {
-                shellCells_[i] = celli;
+            if (theta < 0) theta += 2.0*Pi;
+            if (phi < 0) phi += 2.0*Pi;
 
-                scalar theta = Foam::atan2(diff.y(),diff.x());
-
-                if (theta < 0) theta += twoPi;
-
-                neighbourPoints_[i] =
+            neighbourPoints_[i] =
+            (
+                labelVector
                 (
-                    labelVector
-                    (
-                        0,
-                        label(theta*(nTheta_ - 1)/twoPi),
-                        k
-                    )
-                );
-                i++;
-            }
+                    0,
+                    label(theta*nTheta_/(2.0*Pi)),
+                    label(phi*nk_/Pi)
+                )
+            );
+            i++;
         }
     }
     shellCells_.resize(i);
@@ -206,41 +203,45 @@ void Foam::IBM::particleShapes::cylinder::updateCellLists()
     this->setWeights();
 }
 
-Foam::scalar Foam::IBM::particleShapes::cylinder::D() const
+Foam::scalar Foam::particleShapes::sphere::d() const
 {
     return d_;
 }
 
-Foam::scalar Foam::IBM::particleShapes::cylinder::A() const
+Foam::scalar Foam::particleShapes::sphere::A() const
 {
-    return d_*mag(p2_ - p1_);
+    return Foam::constant::mathematical::pi*sqr(d_/2.0);
 }
 
-Foam::scalar Foam::IBM::particleShapes::cylinder::V() const
+Foam::scalar Foam::particleShapes::sphere::V() const
 {
-    return
-        Foam::constant::mathematical::pi
-       *sqr(d_/2.0)*mag(p1_.z() - p2_.z());
+    return 1.0/6.0*Foam::constant::mathematical::pi*pow3(d_);
 }
 
-const Foam::vector& Foam::IBM::particleShapes::cylinder::position() const
-{
-    return centerPoint_;
-}
 
-Foam::vector& Foam::IBM::particleShapes::cylinder::position()
-{
-    return centerPoint_;
-}
+// * * * * * * * * * * * * * * * IOstream Operators  * * * * * * * * * * * * //
 
-void Foam::IBM::particleShapes::cylinder::moveMesh()
+Foam::Ostream& Foam::particleShapes::sphere::write
+(
+    Ostream& os,
+    const particleShape& shape
+) const
 {
-    forAll(baseMesh_, celli)
+    if (os.format() == IOstream::ASCII)
     {
-        baseMesh_[celli] = centeredMesh_[celli] + position();
+        os  << static_cast<const particleShapes::sphere&>(shape).d();
     }
-    forAll(axis_, k)
+    else
     {
-        axis_[k] = centeredAxis_[k] + position();
+        os  << static_cast<const particleShapes::sphere&>(shape);
     }
+
+    // Check state of Ostream
+    os.check
+    (
+        "Ostream& operator<<(Ostream&, const particleShapes::sphere&)"
+    );
+
+    return os;
 }
+// ************************************************************************* //

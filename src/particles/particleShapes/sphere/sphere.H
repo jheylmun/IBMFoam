@@ -42,8 +42,6 @@ SourceFiles
 
 namespace Foam
 {
-namespace IBM
-{
 namespace particleShapes
 {
 
@@ -73,8 +71,9 @@ public:
         // Construct particle from dictionary entry
         sphere
         (
-            const fvMesh& mesh,
-            const dictionary& dict
+            const polyMesh& mesh,
+            const dictionary& dict,
+            const vector& center
         );
 
     //- Destructor
@@ -92,7 +91,7 @@ public:
         virtual void discretize();
 
         //- Particle diameter
-        virtual scalar D() const;
+        virtual scalar d() const;
 
         //- Surface area
         virtual scalar A() const;
@@ -100,21 +99,29 @@ public:
         //- Particle volume
         virtual scalar V() const;
 
-        //- Center of mass
-        virtual const vector& position() const;
-
-        //- Center of mass
-        virtual vector& position();
-
         //- Return the radius give a position of another particle
         virtual scalar r(const vector& x2) const
         {
             return d_/2.0;
         }
+
+
+    // Ostream Operator
+
+        virtual Ostream& write
+        (
+            Ostream&,
+            const particleShape&
+        ) const;
 };
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 }   // End particleShapes namespace
-}   // End IBM namespace
 }   // End Foam namespace
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #endif
+
+// ************************************************************************* //

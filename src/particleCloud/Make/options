@@ -1,5 +1,6 @@
 EXE_INC = \
     -I$(LIB_SRC)/fileFormats/lnInclude \
+    -I$(LIB_SRC)/lagrangian/basic/lnInclude \
     -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
     -I$(LIB_SRC)/transportModels \
     -I$(LIB_SRC)/transportModels/compressible/lnInclude \
@@ -8,11 +9,12 @@ EXE_INC = \
     -I$(LIB_SRC)/TurbulenceModels/compressible/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
-    -DFULLDEBUG -g -O0
+    -I../particles/lnInclude
 
 
 LIB_LIBS = \
     -L$(FOAM_USER_LIBBIN) \
+    -llagrangian \
     -lfluidThermophysicalModels \
     -lincompressibleTransportModels \
     -lcompressibleTransportModels \
@@ -22,4 +24,5 @@ LIB_LIBS = \
     -lspecie \
     -lfileFormats \
     -lfiniteVolume \
-    -lmeshTools
+    -lmeshTools \
+    -lparticleIBM

@@ -42,9 +42,6 @@ autoPtr<incompressible::turbulenceModel> turbulence
     incompressible::turbulenceModel::New(U, phi, laminarTransport)
 );
 
-IBM::particleList particles
-(
-    mesh
-);
+particleCloud particles(mesh);
 
 #include "createMRF.H"

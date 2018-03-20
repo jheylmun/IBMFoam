@@ -25,17 +25,14 @@ License
 
 namespace Foam
 {
-namespace IBM
-{
     defineTypeNameAndDebug(particleShape, 0);
     defineRunTimeSelectionTable(particleShape, dictionary);
-}
 }
 
 
 // * * * * * * * * * * * *  Protected Member Functions * * * * * * * * * * * //
 
-void Foam::IBM::particleShape::setWeights()
+void Foam::particleShape::setWeights()
 {
     wFromLocal_.clear();
 
@@ -120,10 +117,10 @@ void Foam::IBM::particleShape::setWeights()
         WFromLocal_[celli] = W;
     }
 
-    centerIndex_ = mesh_.findCell(position());
+    centerIndex_ = mesh_.findCell(center_);
 }
 
-void Foam::IBM::particleShape::setNeighbours()
+void Foam::particleShape::setNeighbours()
 {
     Is_ = List<labelList>(shellCells_.size(), labelList(8, 0));
     Os_ = List<labelList>(shellCells_.size(), labelList(4, 0));
@@ -176,14 +173,16 @@ void Foam::IBM::particleShape::setNeighbours()
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::IBM::particleShape::particleShape
+Foam::particleShape::particleShape
 (
-    const fvMesh& mesh,
-    const dictionary& dict
+    const polyMesh& mesh,
+    const dictionary& dict,
+    const vector& center
 )
 :
     mesh_(mesh),
     dict_(dict),
+    center_(center),
     nTheta_(readLabel(dict.lookup("nTheta"))),
     nk_(dict.lookupOrDefault<label>("nk",1)),
     N_(nRadial_*nTheta_*nk_),
@@ -200,15 +199,28 @@ Foam::IBM::particleShape::particleShape
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-Foam::IBM::particleShape::~particleShape()
+Foam::particleShape::~particleShape()
 {}
 
 // * * * * * * * * * * * * * * Public Member Functions * * * * * * * * * * * * //
 
-void Foam::IBM::particleShape::moveMesh()
+void Foam::particleShape::moveMesh(const vector& center)
 {
+    center_ = center;
+
     forAll(baseMesh_, celli)
     {
-        baseMesh_[celli] = centeredMesh_[celli] + position();
+        baseMesh_[celli] = centeredMesh_[celli] + center_;
     }
 }
+
+Foam::Ostream& Foam::operator<<
+(
+    Ostream& os,
+    const particleShape& shape
+)
+{
+    return shape.write(os, shape);
+}
+
+// ************************************************************************* //

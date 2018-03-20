@@ -19,31 +19,31 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particle.H"
+#include "particleCloud.H"
+#include "Time.H"
+#include "IOdictionary.H"
 
-// * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
-template<class type>
-void Foam::IBM::particle::interpolateFromMesh
+
+// * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
+
+
+void Foam::particleCloud::writeFields() const
+{
+    particleIBM::writeFields(*this);
+
+
+}
+
+bool Foam::particleCloud::writeObject
 (
-    const GeometricField<type, fvsPatchField, surfaceMesh>& fieldF,
-    List<type>& field
+    IOstream::streamFormat fmt,
+    IOstream::versionNumber ver,
+    IOstream::compressionType cmp,
+    const bool valid
 ) const
 {
-    if (origProc_ == -1 && neiProcs_.size() == 0)
-    {
-        return;
-    }
-
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
-
-    forAll(shape_->baseMesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
+    writeFields();
+    return cloud::writeObject(fmt, ver, cmp, this->size());
 }
+
+// ************************************************************************* //

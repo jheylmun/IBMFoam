@@ -1,0 +1,9 @@
+particleShapes/particleShape/particleShape.C
+particleShapes/particleShape/particleShapeNew.C
+particleShapes/cylinder/cylinder.C
+particleShapes/sphere/sphere.C
+
+particleIBM/particleIBM.C
+particleIBM/particleIBMIO.C
+
+LIB = $(FOAM_USER_LIBBIN)/libparticleIBM

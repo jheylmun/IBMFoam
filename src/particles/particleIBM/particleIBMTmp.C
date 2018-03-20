@@ -19,39 +19,34 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particleShape.H"
-#include "fvMesh.H"
-#include "dictionary.H"
+#include "particleIBM.H"
 
-// * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
 
-Foam::autoPtr<Foam::IBM::particleShape>
-Foam::IBM::particleShape::New
+template<class T>
+void Foam::particleIBM::interpolateFromMesh
 (
-    const fvMesh& mesh,
-    const dictionary& dict
-)
+    const GeometricField<T, fvsPatchField, surfaceMesh>& fieldF,
+    List<T>& field
+) const
 {
-    const word modelType(dict.lookup("particleShape"));
-
-    Info<< "Selecting particle shape " << modelType << endl;
-
-    dictionaryConstructorTable::iterator cstrIter =
-        dictionaryConstructorTablePtr_->find(modelType);
-
-    if (cstrIter == dictionaryConstructorTablePtr_->end())
+    if (centerProc_ == -1 && neiProcs_.size() == 0)
     {
-        FatalErrorInFunction
-            << "Unknown particle shape type "
-            << modelType << nl << nl
-            << "Valid particleShapes are : " << endl
-            << dictionaryConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+        return;
     }
 
-    return autoPtr<particleShape>
-        (cstrIter()(mesh, dict));
-}
+    const List<scalarList>& ws = shape_->wToLocal_;
+    const scalarList& W = shape_->WToLocal_;
+    const List<labelList>& facesList = shape_->facesToLocal_;
 
+    forAll(shape_->baseMesh_, pti)
+    {
+        const labelList& faces = facesList[pti];
+        forAll(faces, facei)
+        {
+            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
+        }
+    }
+}
 
 // ************************************************************************* //

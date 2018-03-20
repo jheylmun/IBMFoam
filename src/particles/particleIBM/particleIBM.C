@@ -19,21 +19,26 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particle.H"
+#include "particleIBM.H"
 #include "particleShape.H"
-#include "particleList.H"
+
+namespace Foam
+{
+    defineTypeNameAndDebug(particleIBM, 0);
+    defineTemplateTypeNameAndDebug(Cloud<particleIBM>, 0);
+}
 
 // * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
 
-void Foam::IBM::particle::interpolateFToMesh
+void Foam::particleIBM::interpolateFToMesh
 (
     const vectorList& U,
     const vectorList& Uold,
     const vectorList& S,
     volVectorField& F
-)
+) const
 {
-    if (origProc_ == -1 && neiProcs_.size() == 0)
+    if (centerProc_ == -1 && neiProcs_.size() == 0)
     {
         return;
     }
@@ -81,11 +86,11 @@ void Foam::IBM::particle::interpolateFToMesh
 }
 
 
-void Foam::IBM::particle::setProcs()
+void Foam::particleIBM::setProcs()
 {
-    if (mesh_.findCell(shape_->position()) != -1)
+    if (mesh_.findCell(shape_->center()) != -1)
     {
-        origProc_ = Pstream::myProcNo();
+        centerProc_ = Pstream::myProcNo();
     }
 
     neiProcs_.clear();
@@ -95,7 +100,7 @@ void Foam::IBM::particle::setProcs()
         if
         (
             shape_->shellCells()[celli] != -1
-         && Pstream::myProcNo() != origProc_
+         && Pstream::myProcNo() != centerProc_
         )
         {
             bool set = false;
@@ -118,78 +123,154 @@ void Foam::IBM::particle::setProcs()
 
 // * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
 
-Foam::IBM::particle::particle
+Foam::particleIBM::particleIBM
 (
-    const particleList& pList,
-    const dictionary& dict,
-    const volVectorField& Uold,
-    const volVectorField& S
+    const polyMesh& mesh,
+    const dictionary& dict
 )
 :
-    pList_(pList),
-    mesh_(pList_.mesh()),
+    particle
+    (
+        mesh,
+        vector(dict.lookup("position")),
+        mesh.findCell(dict.lookup("position"))
+    ),
+    mesh_(mesh),
+    dict_(dict),
     active_(true),
-    shape_(particleShape::New(mesh_,dict)),
-    U_(mesh_.lookupObject<volVectorField>("U")),
-    U0_(Uold),
-//     rho_(mesh_.lookupObject<volScalarField>("thermo:rho")),
-    p_(mesh_.lookupObject<volScalarField>("p")),
-    S_(S),
-//     UInterp_
-//     (
-//         interpolation<vector>::New
-//         (
-//             pList.ibmDict().subDict("interpolationSchemes"),
-//             U_
-//         )
-//     ),
-//     U0Interp_
-//     (
-//         interpolation<vector>::New
-//         (
-//             pList.ibmDict().subDict("interpolationSchemes"),
-//             U0_
-//         )
-//     ),
-//     pInterp_
-//     (
-//         interpolation<scalar>::New
-//         (
-//             pList.ibmDict().subDict("interpolationSchemes"),
-//             p_
-//         )
-//     ),
-//     SInterp_
-//     (
-//         interpolation<vector>::New
-//         (
-//             pList.ibmDict().subDict("interpolationSchemes"),
-//             S_
-//         )
-//     ),
+    shape_(particleShape::New(mesh_, dict, this->position())),
     v_(dict.template lookupOrDefault<vector>("v", Zero)),
     omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
     rho_(readScalar(dict.lookup("rho"))),
+    age_(0.0),
     integratedForce_(Zero),
-    origProc_(-1)
+    centerProc_(-1)
 {
     setProcs();
 }
 
 
-Foam::IBM::particle::~particle()
+Foam::particleIBM::particleIBM
+(
+    const polyMesh& mesh,
+    const dictionary& dict,
+    const barycentric& coordinates,
+    const label celli,
+    const label tetFacei,
+    const label tetPti
+)
+:
+    particle(mesh, coordinates, celli, tetFacei, tetPti),
+    mesh_(mesh),
+    dict_(dict),
+    active_(true),
+    shape_(particleShape::New(mesh_, dict, position())),
+    v_(dict.template lookupOrDefault<vector>("v", Zero)),
+    omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
+    rho_(readScalar(dict.lookup("rho"))),
+    age_(0.0),
+    integratedForce_(Zero),
+    centerProc_(-1)
+{
+    setProcs();
+}
+
+
+Foam::particleIBM::particleIBM
+(
+    const polyMesh& mesh,
+    const dictionary& dict,
+    const vector& position,
+    const label celli
+)
+:
+    particle(mesh, position, celli),
+    mesh_(mesh),
+    dict_(dict),
+    active_(true),
+    shape_(particleShape::New(mesh_, dict_, this->position())),
+    v_(dict.template lookupOrDefault<vector>("v", Zero)),
+    omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
+    rho_(readScalar(dict.lookup("rho"))),
+    age_(0.0),
+    integratedForce_(Zero),
+    centerProc_(-1)
+{
+    setProcs();
+}
+
+
+Foam::particleIBM::particleIBM
+(
+    const particleIBM& p,
+    const polyMesh& mesh
+)
+:
+    particle(p),
+    mesh_(mesh),
+    dict_(p.dict_),
+    active_(p.active_),
+    shape_(particleShape::New(mesh_, dict_, position())),
+    v_(p.v_),
+    omega_(p.omega_),
+    rho_(p.rho_),
+    age_(p.age_),
+    integratedForce_(p.integratedForce_),
+    centerProc_(p.centerProc_)
+{
+    setProcs();
+}
+
+
+Foam::particleIBM::particleIBM
+(
+    const particleIBM& p
+)
+:
+    particle(p),
+    mesh_(p.mesh_),
+    dict_(p.dict_),
+    active_(p.active_),
+    shape_(particleShape::New(mesh_, dict_, particle::position())),
+    v_(p.v_),
+    omega_(p.omega_),
+    rho_(p.rho_),
+    age_(p.age_),
+    integratedForce_(p.integratedForce_),
+    centerProc_(p.centerProc_)
+{
+    setProcs();
+}
+
+
+Foam::particleIBM::~particleIBM()
 {}
 
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
 
-void Foam::IBM::particle::forcing
+void Foam::particleIBM::solve
+(
+    const scalar& dt
+)
+{
+    vector disp = dt*v_;
+
+    shape_->center_ += disp;
+    v_ += dt*integratedForce_/mass();
+    update();
+
+    this->track(disp, 1.0);
+}
+
+
+void Foam::particleIBM::forcing
 (
     const surfaceVectorField& Uf,
     const surfaceVectorField& Ufold,
     const surfaceVectorField& Sf,
     volVectorField& F
-)
+) const
 {
     label N = shape_->N();
 
@@ -197,9 +278,9 @@ void Foam::IBM::particle::forcing
     vectorList interpolatedUold(N, Zero);
     vectorList interpolatedS(N, Zero);
 
-    interpolateFromMesh(Uf,interpolatedU);
-    interpolateFromMesh(Ufold,interpolatedUold);
-    interpolateFromMesh(Sf,interpolatedS);
+    interpolateFromMesh<vector>(Uf,interpolatedU);
+    interpolateFromMesh<vector>(Ufold,interpolatedUold);
+    interpolateFromMesh<vector>(Sf,interpolatedS);
 
     if (Pstream::parRun())
     {
@@ -223,7 +304,7 @@ void Foam::IBM::particle::forcing
     interpolateFToMesh(interpolatedU,interpolatedUold,interpolatedS,F);
 }
 
-void Foam::IBM::particle::integrateSurfaceStress
+void Foam::particleIBM::integrateSurfaceStress
 (
     const surfaceSymmTensorField& tauf,
     const surfaceScalarField& pf
@@ -265,14 +346,20 @@ void Foam::IBM::particle::integrateSurfaceStress
     }
 }
 
-Foam::scalar Foam::IBM::particle::Cd() const
+Foam::scalar Foam::particleIBM::Cd
+(
+    const scalar& rhoRef,
+    const vector& UInf
+) const
 {
+    vector normUInf(UInf/mag(UInf));
+
     dimensionedScalar Cd
         (
             "Cd",
             dimless,
-            (pList_.normUInf() & integratedForce_)*2.0
-           /(pList_.rhoRef()*magSqr(pList_.UInf())*shape_->A())
+            (normUInf & integratedForce_)*2.0
+           /(rhoRef*magSqr(UInf)*shape_->A())
         );
 
     combineReduce
@@ -283,10 +370,15 @@ Foam::scalar Foam::IBM::particle::Cd() const
     return Cd.value();
 }
 
-void Foam::IBM::particle::update()
+void Foam::particleIBM::update()
 {
-    shape_->moveMesh();
+    shape_->moveMesh(shape_->center_);
     shape_->updateCellLists();
     setProcs();
     shape_->updateCellLists();
+
+    if (centerProc_ != -1)
+    {
+        position() = shape_->center_;
+    }
 }

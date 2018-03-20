@@ -22,49 +22,58 @@ License
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
 
-const Foam::vectorList& Foam::IBM::particleShape::mesh() const
+const Foam::vectorList& Foam::particleShape::mesh() const
 {
     return baseMesh_;
 }
 
-const Foam::vectorList& Foam::IBM::particleShape::Sf() const
+const Foam::vectorList& Foam::particleShape::Sf() const
 {
     return Sf_;
 }
 
-Foam::scalar Foam::IBM::particleShape::delta() const
+Foam::scalar Foam::particleShape::delta() const
 {
     return delta_;
 }
 
-Foam::label Foam::IBM::particleShape::N() const
+Foam::label Foam::particleShape::N() const
 {
     return N_;
 }
 
-Foam::label Foam::IBM::particleShape::nRadial() const
+Foam::label Foam::particleShape::nRadial() const
 {
     return nRadial_;
 }
 
-Foam::label Foam::IBM::particleShape::nTheta() const
+Foam::label Foam::particleShape::nTheta() const
 {
     return nTheta_;
 }
 
-Foam::label Foam::IBM::particleShape::nk() const
+Foam::label Foam::particleShape::nk() const
 {
     return nk_;
 }
 
-Foam::label Foam::IBM::particleShape::centerIndex() const
+Foam::label Foam::particleShape::centerIndex() const
 {
     return centerIndex_;
 }
 
-const Foam::labelList& Foam::IBM::particleShape::shellCells() const
+const Foam::labelList& Foam::particleShape::shellCells() const
 {
     return shellCells_;
 }
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+const Foam::vector& Foam::particleShape::center() const
+{
+    return center_;
+}
+
+Foam::vector& Foam::particleShape::center()
+{
+    return center_;
+}
+// ************************************************************************* //

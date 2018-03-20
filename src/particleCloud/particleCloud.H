@@ -22,18 +22,18 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::particleList
+    Foam::particleCloud
 
 Description
     Templated list of particles
 
 SourceFiles
-    particleList.C
+    particleCloud.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef particleList_H
-#define particleList_H
+#ifndef particleCloud_H
+#define particleCloud_H
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -46,34 +46,28 @@ SourceFiles
 #include "surfaceFields.H"
 #include "fvc.H"
 #include "runTimeSelectionTables.H"
-#include "particle.H"
-#include "objectRegistry.H"
-#include "cloud.H"
-#include "particle.H"
+#include "particleIBM.H"
+#include "Cloud.H"
 
 
 namespace Foam
 {
 
-class IOposition;
-
-namespace IBM
-{
-
 template<class cloudType>
 class IOposition;
+
+class particleCloud;
 
 Ostream& operator<<
 (
     Ostream&,
-    const particleList&
+    const particleCloud&
 );
 
 
-class particleList
+class particleCloud
 :
-    public cloud,
-    public PtrList<particle>
+    public Cloud<particleIBM>
 {
     // Private Data
 
@@ -102,7 +96,7 @@ class particleList
         Switch moving_;
 
 
-    // Priavte functions
+    // Private functions
 
         //- Return the effective viscous stress (laminar + turbulent).
         tmp<volSymmTensorField> devRhoReff() const;
@@ -119,19 +113,18 @@ class particleList
 
 public:
 
-    friend class IOposition<particleList>;
-
+    TypeName("particleCloud");
     // Constructors
 
-        // Construct particleList from dictionary entry
-        particleList
+        // Construct particleCloud from dictionary entry
+        particleCloud
         (
             const fvMesh& mesh
         );
 
 
     //- Destructor
-    virtual ~particleList();
+    virtual ~particleCloud();
 
 
     // Access
@@ -152,12 +145,6 @@ public:
         vector UInf() const
         {
             return UInf_;
-        }
-
-        //- Normalized freestream velocity
-        vector normUInf() const
-        {
-            return UInf_/mag(UInf_);
         }
 
         //- Freestream velocity
@@ -193,13 +180,6 @@ public:
 
     // Read
 
-        //- Helper to construct IOobject for field and current time.
-        IOobject fieldIOobject
-        (
-            const word& fieldName,
-            const IOobject::readOption r
-        ) const;
-
 
     //- Write functions
 
@@ -223,15 +203,18 @@ public:
         friend Ostream& operator<<
         (
             Ostream&,
-            const particleList&
+            const particleCloud&
         );
 
 
 };
 
-}   // End IBM namespace
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 }   // End Foam namespace
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #endif
+
+// ************************************************************************* //

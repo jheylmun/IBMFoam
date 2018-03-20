@@ -29,11 +29,10 @@ particle.0
     particleShape	cylinder;
     rho 100;
     v   (.1 0 0);
-    p1	(0 0 -0.1);
-    p2	(0 0 0.1);
-    d	0.1;
+    position (0 0 0);
+    d 0.1;
     nTheta	100;
-    delta	0.005;
+    delta	0.01;
 }
 
 particle.1
@@ -41,11 +40,10 @@ particle.1
     particleShape	cylinder;
     rho 100;
     v   (-.1 0 0);
-    p1	(0.2 0.05 -0.1);
-    p2	(0.2 0.05 0.1);
+    position (0.2 0.05 0);
     d	0.1;
     nTheta	100;
-    delta	0.005;
+    delta	0.01;
 }
 
 particle.2
@@ -53,18 +51,10 @@ particle.2
     particleShape	cylinder;
     rho 100;
     v   (0 0.1 0);
-    p1	(0.1 -0.15 -0.1);
-    p2	(0.1 -0.15 0.1);
+    position (0.1 -0.15 0);
     d	0.1;
     nTheta	100;
-    delta	0.005;
+    delta	0.01;
 }
 
-interpolationSchemes
-{
-    U       cellPoint;
-    Uold    cellPoint;
-    p       cellPoint;
-    ibmSource cellPoint;
-}
 

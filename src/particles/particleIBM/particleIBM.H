@@ -22,18 +22,18 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::particle
+    Foam::particleIBM
 
 Description
-    abstract class for a spherical particle
+    abstract class for a particle used with IBM method
 
 SourceFiles
-    particle.C
+    particleIBM.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef particle_H
-#define particle_H
+#ifndef particleIBM_H
+#define particleIBM_H
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -43,26 +43,26 @@ SourceFiles
 #include "labelVector.H"
 #include "dictionary.H"
 #include "polyMesh.H"
-#include "fvMesh.H"
+#include "polyMesh.H"
 #include "volFields.H"
 #include "surfaceFields.H"
 #include "runTimeSelectionTables.H"
-#include "polyMesh.H"
+#include "particle.H"
 #include "particleShape.H"
 #include "interpolation.H"
 
 
 namespace Foam
 {
-namespace IBM
-{
-class particleList;
-class particle;
 
-Ostream& operator<<(Ostream&, const particle&);
+class particleIBM;
+
+Ostream& operator<<(Ostream&, const particleIBM&);
 
 
-class particle
+class particleIBM
+:
+    public particle
 {
     //- Size in bytes of the fields
     static const std::size_t sizeofFields_;
@@ -71,47 +71,17 @@ class particle
 protected:
 // Protected Data
 
-    //- Constant access to list of particles
-    const particleList& pList_;
+    //- Reference to mesh
+    const polyMesh& mesh_;
 
-    //- fvMesh
-    const fvMesh& mesh_;
+    //- Dictionary used to constuct particle
+    const dictionary& dict_;
 
     //- Is the partice active
     bool active_;
 
     //- Particle shape containing mesh
     autoPtr<particleShape> shape_;
-
-    //- Const ref to velocity
-    const volVectorField& U_;
-
-    //- Const ref to old velocity
-    const volVectorField& U0_;
-
-    //- Const ref to density
-//     const volScalarField& rhof_;
-
-    //- Const ref to pressure
-    const volScalarField& p_;
-
-    //- Const ref to IBM source term
-    const volVectorField& S_;
-
-//     //- Velocity interpolator
-//     autoPtr<interpolation<vector>> UInterp_;
-//
-//     //- Velocity_old interpolator
-//     autoPtr<interpolation<vector>> U0Interp_;
-//
-//     //- Density interpolator
-//     autoPtr<interpolation<scalar>> rhoInterp_;
-//
-//     //- Pressure interpolator
-//     autoPtr<interpolation<scalar>> pInterp_;
-//
-//     //- Source interpolator
-//     autoPtr<interpolation<vector>> SInterp_;
 
     //- Linear velocity of particle
     vector v_;
@@ -122,13 +92,16 @@ protected:
     //- Particle density
     scalar rho_;
 
+    //- Age of particle
+    scalar age_;
+
     //- Total force acting on the particle
     vector integratedForce_;
 
     // Mpi data
 
         //- processor id at center
-        label origProc_;
+        label centerProc_;
 
         //- Processors used in interpolation of surface mesh
         labelList neiProcs_;
@@ -151,7 +124,7 @@ protected:
             const vectorList& Uold,
             const vectorList& S,
             volVectorField& F
-        );
+        ) const;
 
 
         //- Set owner and neighbour processors
@@ -160,20 +133,57 @@ protected:
 
 public:
 
+    TypeName("particleIBM");
+
     // Constructors
 
-        // Construct particle from dictionary entry
-        particle
+        //- Construct from a position and a cell, searching for the rest of the
+        //  required topology. Other properties are initialised as null.
+        particleIBM
         (
-            const particleList& pList,
-            const dictionary& dict,
-            const volVectorField& Uold,
-            const volVectorField& S
+            const polyMesh& mesh,
+            const dictionary& dict
         );
+
+        //- Construct from mesh, coordinates and topology
+        //  Other properties initialised as null
+        particleIBM
+        (
+            const polyMesh& mesh,
+            const dictionary& dict,
+            const barycentric& coordinates,
+            const label celli,
+            const label tetFacei,
+            const label tetPti
+        );
+
+        //- Construct from a position and a cell, searching for the rest of the
+        //  required topology. Other properties are initialised as null.
+        particleIBM
+        (
+            const polyMesh& mesh,
+            const dictionary& dict,
+            const vector& position,
+            const label celli
+        );
+
+        //- Construct from Istream
+        particleIBM
+        (
+            const polyMesh& mesh,
+            Istream& is,
+            bool readFields = true
+        );
+
+        //- Construct as a copy
+        particleIBM(const particleIBM& p);
+
+        //- Construct as a copy
+        particleIBM(const particleIBM& p, const polyMesh& mesh);
 
 
     //- Destructor
-    virtual ~particle();
+    virtual ~particleIBM();
 
 
     // combine fields
@@ -206,85 +216,51 @@ public:
         };
     // Access
 
-        bool active() const
-        {
-            return active_;
-        }
+        //- Is the particle active?
+        inline bool active() const;
 
-        //- Const access to particle list
-        const particleList& pList() const
-        {
-            return pList_;
-        }
+        //- Center of particle
+        //  Different from position of particle class so center of particle can
+        //  be located off of mesh
+        inline vector center() const;
+
+        inline vector& center();
 
         //- Return the particle mass
-        scalar r(const vector& x2) const
-        {
-            return shape_->r(x2);
-        }
+        inline scalar r(const vector& x2) const;
 
         //- return effective diameter
-        scalar d() const
-        {
-            return shape_->D();
-        }
+        inline scalar d() const;
 
         //- Return the particle mass
-        scalar mass() const
-        {
-            return shape_->V()*rho_;
-        }
+        inline scalar mass() const;
 
         //- Const access to linear velocity
-        vector v() const
-        {
-            return v_;
-        }
+        inline vector v() const;
 
         //- Non-constant access to linear velocity
-        vector& v()
-        {
-            return v_;
-        }
+        inline vector& v();
 
         //- Const access to angular velocity
-        vector omega() const
-        {
-            return omega_;
-        }
+        inline vector omega() const;
 
         //- Non-constant access to angular velocity
-        vector& omega()
-        {
-            return omega_;
-        }
+        inline vector& omega();
 
         //- Copy of particle density
-        scalar rho() const
-        {
-            return rho_;
-        }
+        inline scalar rho() const;
 
         //- Non-constant access to density
-        scalar& rho()
-        {
-            return rho_;
-        }
+        inline scalar& rho();
 
-        const vector& position() const
-        {
-            return shape_->position();
-        }
+        //- Return total force acting on particle
+        inline vector F() const;
 
-        vector& position()
-        {
-            return shape_->position();
-        }
+        //- Return the age of the particle
+        inline scalar age() const;
 
-        vector F() const
-        {
-            return integratedForce_;
-        }
+        //- Return the age of the particle
+        inline scalar& age();
 
 
     // Edit
@@ -296,7 +272,7 @@ public:
             const surfaceVectorField& Ufold,
             const surfaceVectorField& Sf,
             volVectorField& F
-        );
+        ) const;
 
         //- Calculate total stress on particle surface
         void integrateSurfaceStress
@@ -305,30 +281,54 @@ public:
             const surfaceScalarField& p
         );
 
+        //- Move particles in space
+        void solve(const scalar& dt);
+
         //- Calculate and return the drag coefficient
-        scalar Cd() const;
+        scalar Cd(const scalar& rhoRef, const vector& UInf) const;
 
         //- Update weights, cell lists, and mesh
         void update();
 
-        static void writeFields(const particleList& c);
+
+    //- Read/Write functions
+
+        // Write fields
+        static void writeFields(const Cloud<particleIBM>& c);
+
+        // Read fields
+        static void readFields(Cloud<particleIBM>& c);
 
 
     // Ostream Operator
 
+        // Write shape
+        Ostream& writeShape(Ostream& os) const;
+
         friend Ostream& operator<<
         (
             Ostream&,
-            const particle&
+            const particleIBM&
         );
 };
 
-}   // End IBM namespace
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 }   // End Foam namespace
 
-#if NoRepository
-    #include    "particleTmp.H"
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "particleIBMI.H"
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#ifdef NoRepository
+    #include    "particleIBMTmp.C"
 #endif
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #endif
+
+// ************************************************************************* //
+

@@ -41,17 +41,18 @@ SourceFiles
 #include "labelVector.H"
 #include "dictionary.H"
 #include "runTimeSelectionTables.H"
-#include "fvMesh.H"
+#include "polyMesh.H"
 #include "constants.H"
-#include "Pstream.H"
+#include "IOstream.H"
 
 
 namespace Foam
 {
-namespace IBM
-{
 
-class particle;
+class particleIBM;
+class particleShape;
+
+Ostream& operator<<(Ostream&, const particleShape&);
 
 class particleShape
 {
@@ -67,13 +68,16 @@ class particleShape
 protected:
 // Protected Data
 
-    friend particle;
+    friend particleIBM;
 
     //- fvMesh
-    const fvMesh& mesh_;
+    const polyMesh& mesh_;
 
     //- dictionary
     const dictionary& dict_;
+
+    //- center point
+    vector center_;
 
     //- number of points in the radial direction (3)
     label nRadial_ = 3;
@@ -176,18 +180,20 @@ public:
         particleShape,
         dictionary,
         (
-            const fvMesh& mesh,
-            const dictionary& dict
+            const polyMesh& mesh,
+            const dictionary& dict,
+            const vector& center
         ),
-        (mesh, dict)
+        (mesh, dict, center)
     );
 
     // Selectors
 
         static autoPtr<particleShape> New
         (
-            const fvMesh& mesh,
-            const dictionary& dict
+            const polyMesh& mesh,
+            const dictionary& dict,
+            const vector& center
         );
 
 
@@ -196,8 +202,9 @@ public:
         // Construct particle from dictionary entry
         particleShape
         (
-            const fvMesh& mesh,
-            const dictionary& dict
+            const polyMesh& mesh,
+            const dictionary& dict,
+            const vector& center
         );
 
 
@@ -235,7 +242,7 @@ public:
         inline const labelList& shellCells() const;
 
         //- Particle diameter, or equivelant diameter
-        virtual scalar D() const = 0;
+        virtual scalar d() const = 0;
 
         //- Frontal Area
         virtual scalar A() const = 0;
@@ -244,10 +251,10 @@ public:
         virtual scalar V() const = 0;
 
         //- Return center of mass
-        virtual const vector& position() const = 0;
+        inline const vector& center() const;
 
         //- Return center of mass
-        virtual vector& position() = 0;
+        inline vector& center();
 
         //- Return the radius give a position of another particle
         virtual scalar r(const vector& x2) const = 0;
@@ -264,12 +271,35 @@ public:
         virtual void discretize() = 0;
 
         //- Move mesh from (0,0,0) to CoM
-        virtual void moveMesh();
+        virtual void moveMesh(const vector& center);
+
+
+    // Ostream Operator
+
+        friend Ostream& operator<<
+        (
+            Ostream&,
+            const particleShape&
+        );
+
+        // Write
+        virtual Ostream& write
+        (
+            Ostream&,
+            const particleShape&
+        ) const = 0;
 };
 
-}   // End IBM namespace
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 }   // End Foam namespace
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #include    "particleShapeI.H"
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #endif
+
+// ************************************************************************* //
