@@ -23,6 +23,7 @@ License
 #include "polyMesh.H"
 #include "turbulentTransportModel.H"
 #include "turbulentFluidThermoModel.H"
+#include "wallFvPatch.H"
 
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -202,6 +203,21 @@ void Foam::particleCloud::computeCollisions()
 }
 
 
+void Foam::particleCloud::computeWallHits()
+{
+    if (walls_)
+    {
+        return;
+    }
+
+    forAllIter(typename Cloud<particleIBM>, *this, pIter)
+    {
+        particleIBM& p = pIter();
+        p.wallHit(mesh_);
+    }
+}
+
+
 // * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
 
 Foam::particleCloud::particleCloud
@@ -289,6 +305,15 @@ Foam::particleCloud::particleCloud
                 )
             )
         );
+    }
+
+    forAll(mesh_.boundary(), patchi)
+    {
+        if (isA<wallFvPatch>(mesh_.boundary()[patchi]))
+        {
+            walls_ = true;
+            continue;
+        }
     }
 }
 
@@ -385,6 +410,7 @@ void Foam::particleCloud::operator++()
         return;
     }
     computeCollisions();
+    computeWallHits();
     scalar dt = mesh_.time().deltaT().value();
 
     vector avgV = Zero;

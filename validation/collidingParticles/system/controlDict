@@ -15,7 +15,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     simleIBMFoam;
+application     pimleIBMFoam;
 
 startFrom       startTime;
 
@@ -29,7 +29,7 @@ deltaT          .001;
 
 writeControl    adjustableRunTime;
 
-writeInterval   .025;
+writeInterval   .01;
 
 purgeWrite      0;
 

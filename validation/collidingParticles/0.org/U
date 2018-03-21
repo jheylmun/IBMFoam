@@ -36,13 +36,13 @@ boundaryField
 
     freestream1
     {
-        type            inletOutlet;
+        type            noSlip;
         phi             phi;
         inletValue      uniform (0 0 0);
     }
     freestream2
     {
-        type            inletOutlet;
+        type            noSlip;
         phi             phi;
         inletValue      uniform (0 0 0);
     }

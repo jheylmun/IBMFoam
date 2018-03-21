@@ -48,6 +48,7 @@ SourceFiles
 #include "runTimeSelectionTables.H"
 #include "particleIBM.H"
 #include "Cloud.H"
+#include "wallDist.H"
 
 
 namespace Foam
@@ -92,8 +93,11 @@ class particleCloud
         //- IBM source terms (advection, pressure, and viscous stress)
         volVectorField S_;
 
-        // Switche if particles are moving
+        // Switch if particles are moving
         Switch moving_;
+
+        //- Are there walls?
+        bool walls_;
 
 
     // Private functions
@@ -109,6 +113,9 @@ class particleCloud
 
         //- Calculate collisions
         void computeCollisions();
+
+        //- Change particle velocities due to wall collisions
+        void computeWallHits();
 
 
 public:

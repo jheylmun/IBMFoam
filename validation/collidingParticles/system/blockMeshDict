@@ -116,7 +116,7 @@ boundary
     }
     freestream1
     {
-        type patch;
+        type wall;
         neighbourPatch freestream2;
         faces
         (
@@ -126,7 +126,7 @@ boundary
     }
     freestream2
     {
-        type patch;
+        type wall;
         neighbourPatch freestream1;
         faces
         (

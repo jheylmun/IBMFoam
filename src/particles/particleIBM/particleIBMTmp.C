@@ -27,7 +27,7 @@ template<class T>
 void Foam::particleIBM::interpolateFromMesh
 (
     const GeometricField<T, fvsPatchField, surfaceMesh>& fieldF,
-    List<T>& field
+    Field<T>& field
 ) const
 {
     if (centerProc_ == -1 && neiProcs_.size() == 0)

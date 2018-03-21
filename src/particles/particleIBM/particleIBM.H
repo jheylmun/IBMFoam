@@ -114,7 +114,7 @@ protected:
         void interpolateFromMesh
         (
             const GeometricField<type, fvsPatchField, surfaceMesh>& fieldF,
-            List<type>& field
+            Field<type>& field
         ) const;
 
         //- Interpolate F field to global mesh given U and rho
@@ -283,6 +283,9 @@ public:
 
         //- Move particles in space
         void solve(const scalar& dt);
+
+        //- Compute wall hits
+        void wallHit(const fvMesh& mesh);
 
         //- Calculate and return the drag coefficient
         scalar Cd(const scalar& rhoRef, const vector& UInf) const;

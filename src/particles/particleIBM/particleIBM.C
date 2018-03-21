@@ -21,6 +21,8 @@ License
 
 #include "particleIBM.H"
 #include "particleShape.H"
+#include "wallFvPatch.H"
+#include "face.H"
 
 namespace Foam
 {
@@ -264,6 +266,41 @@ void Foam::particleIBM::solve
 }
 
 
+void Foam::particleIBM::wallHit
+(
+    const fvMesh& mesh
+)
+{
+    forAll(mesh.boundary(), patchi)
+    {
+        if (isA<wallFvPatch>(mesh.boundary()[patchi]))
+        {
+            forAll(mesh.boundary()[patchi], facei)
+            {
+                Foam::face minFace = mesh_.boundaryMesh()[patchi][facei];
+                vector faceCentre = minFace.centre(mesh.points());
+
+                scalar dist = mag(center() - faceCentre);
+                if (dist <= r(faceCentre))
+                {
+                    vector norm =
+                        minFace.normal(mesh.points())/minFace.mag(mesh.points());
+
+                    Info<< "orig v: " << v_ <<endl;
+                    vector normv = norm*(norm & v_);
+                    vector tanv = v_ - normv;
+                    Info<< "normal v: " << normv<<endl;
+                    Info<< "tan v: " << tanv<<endl;
+
+                    v_ = tanv - normv;
+                    Info<< "new v: " << v_<<endl;
+                }
+            }
+        }
+    }
+}
+
+
 void Foam::particleIBM::forcing
 (
     const surfaceVectorField& Uf,
@@ -274,9 +311,9 @@ void Foam::particleIBM::forcing
 {
     label N = shape_->N();
 
-    vectorList interpolatedU(N, Zero);
-    vectorList interpolatedUold(N, Zero);
-    vectorList interpolatedS(N, Zero);
+    vectorField interpolatedU(N, Zero);
+    vectorField interpolatedUold(N, Zero);
+    vectorField interpolatedS(N, Zero);
 
     interpolateFromMesh<vector>(Uf,interpolatedU);
     interpolateFromMesh<vector>(Ufold,interpolatedUold);
@@ -287,17 +324,17 @@ void Foam::particleIBM::forcing
         combineReduce
         (
             interpolatedU,
-            ListPlusEqOp<vectorList>()
+            ListPlusEqOp<vectorField>()
         );
         combineReduce
         (
             interpolatedUold,
-            ListPlusEqOp<vectorList>()
+            ListPlusEqOp<vectorField>()
         );
         combineReduce
         (
             interpolatedS,
-            ListPlusEqOp<vectorList>()
+            ListPlusEqOp<vectorField>()
         );
     }
 
@@ -310,8 +347,8 @@ void Foam::particleIBM::integrateSurfaceStress
     const surfaceScalarField& pf
 )
 {
-    symmTensorList interpolatedTau(shape_->N(), Zero);
-    scalarList interpolatedP(shape_->N(), Zero);
+    symmTensorField interpolatedTau(shape_->N(), Zero);
+    scalarField interpolatedP(shape_->N(), Zero);
 
     interpolateFromMesh(tauf,interpolatedTau);
     interpolateFromMesh(pf,interpolatedP);
@@ -320,12 +357,12 @@ void Foam::particleIBM::integrateSurfaceStress
         combineReduce
         (
             interpolatedTau,
-            ListPlusEqOp<symmTensorList>()
+            ListPlusEqOp<symmTensorField>()
         );
         combineReduce
         (
             interpolatedP,
-            ListPlusEqOp<scalarList>()
+            ListPlusEqOp<scalarField>()
         );
     }
 
