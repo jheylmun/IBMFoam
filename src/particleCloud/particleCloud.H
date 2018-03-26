@@ -78,6 +78,9 @@ class particleCloud
         //- dictionary used to initialize points
         IOdictionary dict_;
 
+        //- Number of particles since simuation start
+        label nParticles_;
+
         //- Reference values
         vector UInf_;
         vector flowNormal_;
@@ -116,6 +119,41 @@ class particleCloud
 
         //- Change particle velocities due to wall collisions
         void computeWallHits();
+
+
+    // Combine fields ops
+
+        //- Add over procs
+        template<class T>
+        class plusEqOp
+        {
+
+        public:
+
+            void operator()(T& x, const T& y) const
+            {
+                x += y;
+//                 x.setSize(x.size());
+//
+//                 forAll(y, i)
+//                 {
+//                     x[i] += y[i];
+//                 }
+            }
+        };
+
+        //- Max value across procs
+        template<class T>
+        class MaxEqOp
+        {
+
+        public:
+
+            void operator()(T& x, const T& y) const
+            {
+                x = max(x,y);
+            }
+        };
 
 
 public:

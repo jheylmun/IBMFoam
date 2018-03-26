@@ -22,6 +22,23 @@ License
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
 
+Foam::particleShape::locationType Foam::particleShape::onMesh() const
+{
+    return onMesh_;
+}
+
+bool Foam::particleShape::singleProc() const
+{
+    forAll(neiProcs_, i)
+    {
+        if (neiProcs_[i] == true)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 const Foam::vectorList& Foam::particleShape::mesh() const
 {
     return baseMesh_;
@@ -32,7 +49,7 @@ const Foam::vectorList& Foam::particleShape::Sf() const
     return Sf_;
 }
 
-Foam::scalar Foam::particleShape::delta() const
+const Foam::scalar& Foam::particleShape::delta() const
 {
     return delta_;
 }

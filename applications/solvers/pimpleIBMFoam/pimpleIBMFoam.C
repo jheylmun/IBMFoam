@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
 
         ++particles;
 
-//         particles.writeData(Info);
         runTime.write();
 
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"

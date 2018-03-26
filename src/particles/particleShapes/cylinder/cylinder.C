@@ -203,6 +203,7 @@ void Foam::particleShapes::cylinder::updateCellLists()
 
     this->setNeighbours();
     this->setWeights();
+    setProcs();
 }
 
 Foam::scalar Foam::particleShapes::cylinder::d() const

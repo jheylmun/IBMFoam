@@ -22,13 +22,25 @@ License
 
 // * * * * * * * * * * * * * * * * Access funtions  * * * * * * * * * * * * * * //
 
+Foam::label Foam::particleIBM::index() const
+{
+    return index_;
+}
+
+
+Foam::particleShape::locationType Foam::particleIBM::onMesh() const
+{
+    return shape_->onMesh();
+}
+
+
 bool Foam::particleIBM::active() const
 {
     return active_;
 }
 
 
-Foam::vector Foam::particleIBM::center() const
+const Foam::vector& Foam::particleIBM::center() const
 {
     return shape_->center_;
 }
@@ -58,7 +70,7 @@ Foam::scalar Foam::particleIBM::mass() const
 }
 
 
-Foam::vector Foam::particleIBM::v() const
+const Foam::vector& Foam::particleIBM::v() const
 {
     return v_;
 }
@@ -70,7 +82,7 @@ Foam::vector& Foam::particleIBM::v()
 }
 
 
-Foam::vector Foam::particleIBM::omega() const
+const Foam::vector& Foam::particleIBM::omega() const
 {
     return omega_;
 }
@@ -82,7 +94,7 @@ Foam::vector& Foam::particleIBM::omega()
 }
 
 
-Foam::scalar Foam::particleIBM::rho() const
+const Foam::scalar& Foam::particleIBM::rho() const
 {
     return rho_;
 }
@@ -94,12 +106,19 @@ Foam::scalar& Foam::particleIBM::rho()
 }
 
 
-Foam::vector Foam::particleIBM::F() const
+const Foam::vector& Foam::particleIBM::F() const
 {
     return integratedForce_;
 }
 
-Foam::scalar Foam::particleIBM::age() const
+
+Foam::vector& Foam::particleIBM::F()
+{
+    return integratedForce_;
+}
+
+
+const Foam::scalar& Foam::particleIBM::age() const
 {
     return age_;
 }
@@ -107,6 +126,21 @@ Foam::scalar Foam::particleIBM::age() const
 Foam::scalar& Foam::particleIBM::age()
 {
     return age_;
+}
+
+Foam::particleIBM* Foam::particleIBM::particlePtr()
+{
+    return particlePtr_;
+}
+
+Foam::label Foam::particleIBM::centerProc() const
+{
+    return shape_->centerProc_;
+}
+
+const Foam::boolList& Foam::particleIBM::neiProcs() const
+{
+    return shape_->neiProcs_;
 }
 
 // ************************************************************************* //

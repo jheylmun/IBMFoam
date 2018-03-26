@@ -40,7 +40,7 @@ void Foam::particleIBM::interpolateFToMesh
     volVectorField& F
 ) const
 {
-    if (centerProc_ == -1 && neiProcs_.size() == 0)
+    if (shape_->centerProc_ == -1 && shape_->singleProc())
     {
         return;
     }
@@ -88,74 +88,49 @@ void Foam::particleIBM::interpolateFToMesh
 }
 
 
-void Foam::particleIBM::setProcs()
-{
-    if (mesh_.findCell(shape_->center()) != -1)
-    {
-        centerProc_ = Pstream::myProcNo();
-    }
-
-    neiProcs_.clear();
-
-    forAll(shape_->shellCells(), celli)
-    {
-        if
-        (
-            shape_->shellCells()[celli] != -1
-         && Pstream::myProcNo() != centerProc_
-        )
-        {
-            bool set = false;
-            forAll(neiProcs_, proci)
-            {
-                if (neiProcs_[proci] == Pstream::myProcNo())
-                {
-                    set = true;
-                    break;
-                }
-            }
-            if (!set)
-            {
-                neiProcs_.append(Pstream::myProcNo());
-            }
-        }
-    }
-}
-
-
 // * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
 
 Foam::particleIBM::particleIBM
 (
     const polyMesh& mesh,
-    const dictionary& dict
+    const dictionary& dict,
+    const label& index
 )
 :
     particle
     (
-        mesh,
-        vector(dict.lookup("position")),
-        mesh.findCell(dict.lookup("position"))
+        (mesh.findCell(dict.lookup("position")) != -1)
+      ? particle
+        (
+            mesh,
+            vector(dict.lookup("position")),
+            mesh.findCell(dict.lookup("position"))
+        )
+      : Foam::particle
+        (
+            mesh,
+            mesh.cellCentres()[mesh.findNearestCell(dict.lookup("position"))],
+            mesh.findNearestCell(dict.lookup("position"))
+        )
     ),
     mesh_(mesh),
     dict_(dict),
+    index_(index),
     active_(true),
-    shape_(particleShape::New(mesh_, dict, this->position())),
+    shape_(particleShape::New(mesh_, dict, vector(dict.lookup("position")))),
     v_(dict.template lookupOrDefault<vector>("v", Zero)),
     omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
     rho_(readScalar(dict.lookup("rho"))),
     age_(0.0),
-    integratedForce_(Zero),
-    centerProc_(-1)
-{
-    setProcs();
-}
+    integratedForce_(Zero)
+{}
 
 
 Foam::particleIBM::particleIBM
 (
     const polyMesh& mesh,
     const dictionary& dict,
+    const label& index,
     const barycentric& coordinates,
     const label celli,
     const label tetFacei,
@@ -165,23 +140,22 @@ Foam::particleIBM::particleIBM
     particle(mesh, coordinates, celli, tetFacei, tetPti),
     mesh_(mesh),
     dict_(dict),
+    index_(index),
     active_(true),
-    shape_(particleShape::New(mesh_, dict, position())),
+    shape_(particleShape::New(mesh_, dict, vector(dict.lookup("position")))),
     v_(dict.template lookupOrDefault<vector>("v", Zero)),
     omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
     rho_(readScalar(dict.lookup("rho"))),
     age_(0.0),
-    integratedForce_(Zero),
-    centerProc_(-1)
-{
-    setProcs();
-}
+    integratedForce_(Zero)
+{}
 
 
 Foam::particleIBM::particleIBM
 (
     const polyMesh& mesh,
     const dictionary& dict,
+    const label& index,
     const vector& position,
     const label celli
 )
@@ -189,17 +163,15 @@ Foam::particleIBM::particleIBM
     particle(mesh, position, celli),
     mesh_(mesh),
     dict_(dict),
+    index_(index),
     active_(true),
-    shape_(particleShape::New(mesh_, dict_, this->position())),
+    shape_(particleShape::New(mesh_, dict_, vector(dict.lookup("position")))),
     v_(dict.template lookupOrDefault<vector>("v", Zero)),
     omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
     rho_(readScalar(dict.lookup("rho"))),
     age_(0.0),
-    integratedForce_(Zero),
-    centerProc_(-1)
-{
-    setProcs();
-}
+    integratedForce_(Zero)
+{}
 
 
 Foam::particleIBM::particleIBM
@@ -208,20 +180,28 @@ Foam::particleIBM::particleIBM
     const polyMesh& mesh
 )
 :
-    particle(p),
+    particle
+    (
+        (p.mesh_.findCell(p.position()) != -1)
+      ? static_cast<const particle&>(p)
+      : particle
+        (
+            p.mesh_,
+            p.mesh_.cellCentres()[p.mesh_.findNearestCell(p.position())],
+            p.mesh_.findNearestCell(p.position())
+        )
+    ),
     mesh_(mesh),
     dict_(p.dict_),
+    index_(p.index_),
     active_(p.active_),
-    shape_(particleShape::New(mesh_, dict_, position())),
+    shape_(particleShape::New(mesh_, dict_, vector(dict_.lookup("position")))),
     v_(p.v_),
     omega_(p.omega_),
     rho_(p.rho_),
     age_(p.age_),
-    integratedForce_(p.integratedForce_),
-    centerProc_(p.centerProc_)
-{
-    setProcs();
-}
+    integratedForce_(p.integratedForce_)
+{}
 
 
 Foam::particleIBM::particleIBM
@@ -229,24 +209,37 @@ Foam::particleIBM::particleIBM
     const particleIBM& p
 )
 :
-    particle(p),
+    particle
+    (
+        (p.mesh_.findCell(p.position()) != -1)
+      ? static_cast<const particle&>(p)
+      : Foam::particle
+        (
+            p.mesh_,
+            p.mesh_.cellCentres()[p.mesh_.findNearestCell(p.position())],
+            p.mesh_.findNearestCell(p.position())
+        )
+    ),
     mesh_(p.mesh_),
     dict_(p.dict_),
+    index_(p.index_),
     active_(p.active_),
-    shape_(particleShape::New(mesh_, dict_, particle::position())),
+    shape_(particleShape::New(mesh_, dict_, vector(dict_.lookup("position")))),
     v_(p.v_),
     omega_(p.omega_),
     rho_(p.rho_),
     age_(p.age_),
-    integratedForce_(p.integratedForce_),
-    centerProc_(p.centerProc_)
-{
-    setProcs();
-}
+    integratedForce_(p.integratedForce_)
+{}
 
 
 Foam::particleIBM::~particleIBM()
-{}
+{
+    if (particlePtr_)
+    {
+        delete particlePtr_;
+    }
+}
 
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
@@ -258,11 +251,17 @@ void Foam::particleIBM::solve
 {
     vector disp = dt*v_;
 
+    vector x0 = shape_->center_;
     shape_->center_ += disp;
     v_ += dt*integratedForce_/mass();
     update();
 
-    this->track(disp, 1.0);
+    if (mesh_.findCell(shape_->center_) == -1)
+    {
+        active_ = 0;
+    };
+
+    this->track(disp - (position() - x0), 1.0);
 }
 
 
@@ -281,19 +280,15 @@ void Foam::particleIBM::wallHit
                 vector faceCentre = minFace.centre(mesh.points());
 
                 scalar dist = mag(center() - faceCentre);
-                if (dist <= r(faceCentre))
+                if (dist <= (r(faceCentre) + 1e-10))
                 {
                     vector norm =
                         minFace.normal(mesh.points())/minFace.mag(mesh.points());
 
-                    Info<< "orig v: " << v_ <<endl;
                     vector normv = norm*(norm & v_);
                     vector tanv = v_ - normv;
-                    Info<< "normal v: " << normv<<endl;
-                    Info<< "tan v: " << tanv<<endl;
 
                     v_ = tanv - normv;
-                    Info<< "new v: " << v_<<endl;
                 }
             }
         }
@@ -319,25 +314,6 @@ void Foam::particleIBM::forcing
     interpolateFromMesh<vector>(Ufold,interpolatedUold);
     interpolateFromMesh<vector>(Sf,interpolatedS);
 
-    if (Pstream::parRun())
-    {
-        combineReduce
-        (
-            interpolatedU,
-            ListPlusEqOp<vectorField>()
-        );
-        combineReduce
-        (
-            interpolatedUold,
-            ListPlusEqOp<vectorField>()
-        );
-        combineReduce
-        (
-            interpolatedS,
-            ListPlusEqOp<vectorField>()
-        );
-    }
-
     interpolateFToMesh(interpolatedU,interpolatedUold,interpolatedS,F);
 }
 
@@ -352,19 +328,6 @@ void Foam::particleIBM::integrateSurfaceStress
 
     interpolateFromMesh(tauf,interpolatedTau);
     interpolateFromMesh(pf,interpolatedP);
-    if (Pstream::parRun())
-    {
-        combineReduce
-        (
-            interpolatedTau,
-            ListPlusEqOp<symmTensorField>()
-        );
-        combineReduce
-        (
-            interpolatedP,
-            ListPlusEqOp<scalarField>()
-        );
-    }
 
     integratedForce_ = Zero;
 
@@ -399,11 +362,11 @@ Foam::scalar Foam::particleIBM::Cd
            /(rhoRef*magSqr(UInf)*shape_->A())
         );
 
-    combineReduce
-    (
-        Cd,
-        MaxEqOp<dimensionedScalar>()
-    );
+//     combineReduce
+//     (
+//         Cd,
+//         MaxEqOp<dimensionedScalar>()
+//     );
     return Cd.value();
 }
 
@@ -411,10 +374,8 @@ void Foam::particleIBM::update()
 {
     shape_->moveMesh(shape_->center_);
     shape_->updateCellLists();
-    setProcs();
-    shape_->updateCellLists();
 
-    if (centerProc_ != -1)
+    if (shape_->centerProc_ != -1)
     {
         position() = shape_->center_;
     }

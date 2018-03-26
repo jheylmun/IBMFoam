@@ -39,6 +39,7 @@ void Foam::particleShape::setWeights()
     // Total number of global mesh faces
     label nFaces = mesh_.nInternalFaces();
 
+    label nPtsOnMesh = 0;
     forAll(baseMesh_, pti)
     {
         vector pt = baseMesh_[pti];
@@ -66,7 +67,7 @@ void Foam::particleShape::setWeights()
                         mesh_.faceCentres()[cellFaces[facei]] - pt
                     );
 
-                if (diff < small)
+                if (diff < SMALL)
                 {
                     w = 0.0;
                     w[wi] = 1.0;
@@ -85,12 +86,27 @@ void Foam::particleShape::setWeights()
             wToLocal_[pti] = w;
             WToLocal_[pti] = W;
             facesToLocal_[pti] = faces;
+
+            nPtsOnMesh++;
         }
     }
 
     //- Set weighting for interpolation from local mesh
     wFromLocal_ = List<scalarList>(shellCells_.size());
     WFromLocal_ = scalarList(shellCells_.size());
+
+    if (nPtsOnMesh == baseMesh_.size())
+    {
+        onMesh_ = ON_MESH;
+    }
+    else if (nPtsOnMesh == 0)
+    {
+        onMesh_ = OFF_MESH;
+    }
+    else
+    {
+        onMesh_ = PARTIAL;
+    }
 
     forAll(shellCells_, celli)
     {
@@ -171,6 +187,28 @@ void Foam::particleShape::setNeighbours()
 }
 
 
+void Foam::particleShape::setProcs()
+{
+    if (mesh_.findCell(center_) != -1)
+    {
+        centerProc_ = Pstream::myProcNo();
+    }
+
+    neiProcs_ = false;
+    forAll(shellCells_, celli)
+    {
+        if
+        (
+            shellCells_[celli] != -1
+         && Pstream::myProcNo() != centerProc_
+        )
+        {
+            neiProcs_[Pstream::myProcNo()] = true;
+        }
+    }
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::particleShape::particleShape
@@ -182,6 +220,7 @@ Foam::particleShape::particleShape
 :
     mesh_(mesh),
     dict_(dict),
+    onMesh_(ON_MESH),
     center_(center),
     nTheta_(readLabel(dict.lookup("nTheta"))),
     nk_(dict.lookupOrDefault<label>("nk",1)),
@@ -193,7 +232,8 @@ Foam::particleShape::particleShape
     neighbourPoints_(N_),
     wToLocal_(N_),
     WToLocal_(N_),
-    facesToLocal_(N_)
+    facesToLocal_(N_),
+    neiProcs_(Pstream::nProcs(), false)
 {}
 
 

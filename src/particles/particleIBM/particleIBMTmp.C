@@ -30,7 +30,7 @@ void Foam::particleIBM::interpolateFromMesh
     Field<T>& field
 ) const
 {
-    if (centerProc_ == -1 && neiProcs_.size() == 0)
+    if (shape_->centerProc_ == -1 && shape_->singleProc())
     {
         return;
     }

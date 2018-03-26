@@ -43,14 +43,14 @@ Foam::particleIBM::particleIBM
     particle(mesh, is, readFields),
     mesh_(mesh),
     dict_(mesh.lookupObject<IOdictionary>("initialStates").subDict("default")),
+    index_(-1),
     active_(0),
     shape_(particleShape::New(mesh_, dict_, position())),
     v_(Zero),
     omega_(Zero),
     rho_(0.0),
     age_(0.0),
-    integratedForce_(Zero),
-    centerProc_(-1)
+    integratedForce_(Zero)
 {
     if (readFields)
     {
@@ -74,7 +74,6 @@ Foam::particleIBM::particleIBM
         "particleIBM::patricleIBM"
         "(const polyMesh&, const dictinoary&, Istream&, bool)"
     );
-    setProcs();
 }
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
@@ -84,6 +83,7 @@ void Foam::particleIBM::writeFields(const Cloud<particleIBM>& c)
     particle::writeFields(c);
     label np = c.size();
 
+    IOField<label> index(c.fieldIOobject("index", IOobject::NO_READ), np);
     IOField<label> active(c.fieldIOobject("active", IOobject::NO_READ), np);
     IOField<scalar> d(c.fieldIOobject("d", IOobject::NO_READ), np);
     IOField<vector> v(c.fieldIOobject("v", IOobject::NO_READ), np);
@@ -97,6 +97,7 @@ void Foam::particleIBM::writeFields(const Cloud<particleIBM>& c)
     {
         const particleIBM& p = iter();
 
+        index[i] = p.index();
         active[i] = p.active();
         d[i] = p.d();
         v[i] = p.v();
@@ -108,6 +109,7 @@ void Foam::particleIBM::writeFields(const Cloud<particleIBM>& c)
 
     const bool valid = np > 0;
 
+    index.write();
     active.write(valid);
     d.write(valid);
     v.write(valid);
@@ -123,6 +125,12 @@ void Foam::particleIBM::readFields(Cloud<particleIBM>& c)
 
     particle::readFields(c);
 
+    IOField<label> index
+    (
+        c.fieldIOobject("index", IOobject::MUST_READ),
+        valid
+    );
+    c.checkFieldIOobject(c, index);
     IOField<label> active
     (
         c.fieldIOobject("active", IOobject::MUST_READ),
@@ -179,6 +187,7 @@ void Foam::particleIBM::readFields(Cloud<particleIBM>& c)
     {
         particleIBM& p = iter();
 
+        p.index_ = index[i];
         p.active_ = active[i];
         p.v_ = v[i];
         p.omega_ = omega[i];
@@ -201,6 +210,7 @@ Foam::Ostream& Foam::operator<<
     if (os.format() == IOstream::ASCII)
     {
         os  << static_cast<const particle&>(p)
+            << token::SPACE << p.index()
             << token::SPACE << p.active()
             << token::SPACE << p.position()
             << token::SPACE << p.v()

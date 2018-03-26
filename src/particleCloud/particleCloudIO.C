@@ -30,8 +30,6 @@ License
 void Foam::particleCloud::writeFields() const
 {
     particleIBM::writeFields(*this);
-
-
 }
 
 bool Foam::particleCloud::writeObject

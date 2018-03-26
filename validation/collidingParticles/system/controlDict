@@ -48,7 +48,7 @@ runTimeModifiable true;
 adjustTimeStep  yes;
 
 maxCo           0.2;
-
+/*
 functions0
 {
     probes
@@ -68,6 +68,6 @@ functions0
             (  0.0125 0.020 0     )
         );
     }
-}
+}*/
 
 // ************************************************************************* //

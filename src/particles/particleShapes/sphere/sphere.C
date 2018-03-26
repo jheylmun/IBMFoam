@@ -201,6 +201,7 @@ void Foam::particleShapes::sphere::updateCellLists()
 
     this->setNeighbours();
     this->setWeights();
+    setProcs();
 }
 
 Foam::scalar Foam::particleShapes::sphere::d() const

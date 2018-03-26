@@ -43,7 +43,6 @@ SourceFiles
 #include "labelVector.H"
 #include "dictionary.H"
 #include "polyMesh.H"
-#include "polyMesh.H"
 #include "volFields.H"
 #include "surfaceFields.H"
 #include "runTimeSelectionTables.H"
@@ -64,6 +63,8 @@ class particleIBM
 :
     public particle
 {
+// Private data
+
     //- Size in bytes of the fields
     static const std::size_t sizeofFields_;
 
@@ -76,6 +77,9 @@ protected:
 
     //- Dictionary used to constuct particle
     const dictionary& dict_;
+
+    //- Particle name
+    label index_;
 
     //- Is the partice active
     bool active_;
@@ -98,13 +102,8 @@ protected:
     //- Total force acting on the particle
     vector integratedForce_;
 
-    // Mpi data
-
-        //- processor id at center
-        label centerProc_;
-
-        //- Processors used in interpolation of surface mesh
-        labelList neiProcs_;
+    //- Pointer to same particle, but across cyclic or processor
+    particleIBM* particlePtr_;
 
 
     // Protected member fuctions
@@ -127,10 +126,6 @@ protected:
         ) const;
 
 
-        //- Set owner and neighbour processors
-        void setProcs();
-
-
 public:
 
     TypeName("particleIBM");
@@ -142,7 +137,8 @@ public:
         particleIBM
         (
             const polyMesh& mesh,
-            const dictionary& dict
+            const dictionary& dict,
+            const label& index
         );
 
         //- Construct from mesh, coordinates and topology
@@ -151,6 +147,7 @@ public:
         (
             const polyMesh& mesh,
             const dictionary& dict,
+            const label& index,
             const barycentric& coordinates,
             const label celli,
             const label tetFacei,
@@ -163,6 +160,7 @@ public:
         (
             const polyMesh& mesh,
             const dictionary& dict,
+            const label& index,
             const vector& position,
             const label celli
         );
@@ -186,35 +184,13 @@ public:
     virtual ~particleIBM();
 
 
-    // combine fields
-        template<class T>
-        class ListPlusEqOp
-        {
-
-        public:
-
-            void operator()(T& x, const T& y) const
-            {
-                x.setSize(x.size());
-
-                forAll(y, i)
-                {
-                    x[i] += y[i];
-                }
-            }
-        };
-        template<class T>
-        class MaxEqOp
-        {
-
-        public:
-
-            void operator()(T& x, const T& y) const
-            {
-                x = max(x,y);
-            }
-        };
     // Access
+
+        //- Particle name
+        inline label index() const;
+
+        //- Is any part of the particle on the mesh
+        inline particleShape::locationType onMesh() const;
 
         //- Is the particle active?
         inline bool active() const;
@@ -222,7 +198,7 @@ public:
         //- Center of particle
         //  Different from position of particle class so center of particle can
         //  be located off of mesh
-        inline vector center() const;
+        inline const vector& center() const;
 
         inline vector& center();
 
@@ -236,31 +212,46 @@ public:
         inline scalar mass() const;
 
         //- Const access to linear velocity
-        inline vector v() const;
+        inline const vector& v() const;
 
         //- Non-constant access to linear velocity
         inline vector& v();
 
         //- Const access to angular velocity
-        inline vector omega() const;
+        inline const vector& omega() const;
 
         //- Non-constant access to angular velocity
         inline vector& omega();
 
         //- Copy of particle density
-        inline scalar rho() const;
+        inline const scalar& rho() const;
 
         //- Non-constant access to density
         inline scalar& rho();
 
         //- Return total force acting on particle
-        inline vector F() const;
+        inline const vector& F() const;
+
+        //- Return total force acting on particle
+        inline vector& F();
 
         //- Return the age of the particle
-        inline scalar age() const;
+        inline const scalar& age() const;
 
         //- Return the age of the particle
         inline scalar& age();
+
+        //- Return the pointer to another copy of the particle
+        inline particleIBM* particlePtr();
+
+
+    //- Mpi data access
+
+        //- Center processor
+        inline label centerProc() const;
+
+        //- List of shared processors const;
+        inline const boolList& neiProcs() const;
 
 
     // Edit

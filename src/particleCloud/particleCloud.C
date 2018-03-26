@@ -205,7 +205,7 @@ void Foam::particleCloud::computeCollisions()
 
 void Foam::particleCloud::computeWallHits()
 {
-    if (walls_)
+    if (!walls_)
     {
         return;
     }
@@ -243,11 +243,12 @@ Foam::particleCloud::particleCloud
             IOobject::NO_WRITE
         )
     ),
+    nParticles_(readLabel(dict_.lookup("nParticles"))),
     UInf_
     (
         dict_.subDict("flow").template lookupOrDefault<vector>("UInf", Zero)
     ),
-    flowNormal_(UInf_/(mag(UInf_) + small)),
+    flowNormal_(UInf_/(mag(UInf_) + SMALL)),
     rhoRef_
     (
         dict_.subDict("flow").template lookupOrDefault<scalar>("rhoInf", 1.0)
@@ -287,25 +288,37 @@ Foam::particleCloud::particleCloud
     ),
     moving_(dict_.lookup("moving"))
 {
-    label nParticles = readLabel(dict_.lookup("nParticles"));
-    for (label i = 0; i < nParticles; i++)
+    for (label i = 0; i < nParticles_; i++)
     {
+        const dictionary& pDict =
+            dict_.subDict
+            (
+                IOobject::groupName
+                (
+                    "particle",
+                    Foam::name(i)
+                )
+            );
+
         this->append
         (
             new particleIBM
             (
                 mesh_,
-                dict_.subDict
-                (
-                    IOobject::groupName
-                    (
-                        "particle",
-                        Foam::name(i)
-                    )
-                )
+                pDict,
+                i
             )
         );
     }
+
+//     forAllIter(typename Cloud<particleIBM>, *this, pIter)
+//     {
+//         particleIBM& p = pIter();
+//         if (p.onMesh() == particleShape::locationType::OFF_MESH)
+//         {
+//             delete(this->remove(pIter));
+//         }
+//     }
 
     forAll(mesh_.boundary(), patchi)
     {
@@ -390,6 +403,70 @@ void Foam::particleCloud::integrateSurfaceStresses()
         particleIBM& p = pIter();
         p.integrateSurfaceStress(tauf,pf);
     }
+
+    if (Pstream::parRun())
+    {
+        for
+        (
+            label proci = 0;
+            proci < Pstream::nProcs();
+            proci++
+        )
+        {
+            forAllConstIter
+            (
+                typename Cloud<particleIBM>,
+                *this,
+                pIter
+            )
+            {
+                const particleIBM& p = pIter();
+                label pIndex = -1;
+
+                if (Pstream::myProcNo() == proci)
+                {
+                    pIndex = p.index();
+                }
+
+                vector totF(Zero);
+                forAllConstIter
+                (
+                    typename Cloud<particleIBM>,
+                    *this,
+                    pIter2
+                )
+                {
+                    const particleIBM& p2 = pIter2();
+
+                    if (p2.index() == pIndex)
+                    {
+                        totF += p2.F();
+                    }
+                }
+
+                combineReduce
+                (
+                    totF,
+                    plusEqOp<vector>()
+                );
+
+                forAllIter
+                (
+                    typename Cloud<particleIBM>,
+                    *this,
+                    pIter2
+                )
+                {
+                    particleIBM& p2 = pIter2();
+
+                    if (p2.index() == pIndex)
+                    {
+                        p2.F() = totF;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Foam::particleCloud::Cd(IOField<scalar>& Cds) const
@@ -418,7 +495,30 @@ void Foam::particleCloud::operator++()
     forAllIter(typename Cloud<particleIBM>, *this, pIter)
     {
         particleIBM& p = pIter();
+
+        label initProc = p.centerProc();
+        const boolList& initNeiProcs = p.neiProcs();
+
         p.solve(dt);
+
+//         label procNo = Pstream::myProcNo();
+//         if
+//         (
+//             initProc != p.centerProc()
+//          && p.neiProcs()[procNo] == false
+//         )
+//         {
+//             remove(pIter);
+//         }
+//
+//         if
+//         (
+//             initNeiProcs[procNo] == false
+//          && p.neiProcs()[procNo] == true
+//         )
+//         {
+//             append(new particleIBM(const_cast<const particleIBM&>(p)));
+//         }
 
         avgV += p.v();
         avgP += mag(p.v())*p.mass();

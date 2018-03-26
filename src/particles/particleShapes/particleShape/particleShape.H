@@ -56,6 +56,18 @@ Ostream& operator<<(Ostream&, const particleShape&);
 
 class particleShape
 {
+public:
+
+    //- Declaration of on mesh indicator
+    enum locationType
+    {
+        OFF_MESH,
+        PARTIAL,
+        ON_MESH
+    };
+
+
+private:
     // Private member functions
 
         //- Disallow default bitwise copy construct
@@ -75,6 +87,9 @@ protected:
 
     //- dictionary
     const dictionary& dict_;
+
+    //- Is the particle on the mesh
+    locationType onMesh_;
 
     //- center point
     vector center_;
@@ -137,6 +152,15 @@ protected:
     mutable scalarList WFromLocal_;
 
 
+    // Mpi data
+
+        //- processor id at center
+        label centerProc_;
+
+        //- Processors used in interpolation of surface mesh
+        boolList neiProcs_;
+
+
     // Protected member fuctions
 
         //- Return total index based on theta, phi index
@@ -166,6 +190,9 @@ protected:
 
         //- Set surface areas and surface normals
         virtual void calcSf() = 0;
+
+        //- Set owner and neighbour processors
+        void setProcs();
 
 
 public:
@@ -214,6 +241,12 @@ public:
 
     // Access
 
+        //- Is the shape on the mesh
+        inline locationType onMesh() const;
+
+        //- Is the particle on a single processor
+        inline bool singleProc() const;
+
         //- Return structured mesh
         inline const vectorList& mesh() const;
 
@@ -221,7 +254,7 @@ public:
         inline const vectorList& Sf() const;
 
         //- Return delta
-        inline scalar delta() const;
+        inline const scalar& delta() const;
 
         //- Return total number of points
         inline label N() const;
@@ -261,6 +294,9 @@ public:
 
 
     // Edit functions
+
+        //- Update onMesh variable
+        void setOnMesh();
 
         //- Update cells inside particle and shells
         virtual void updateCellLists() = 0;
