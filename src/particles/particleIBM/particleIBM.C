@@ -259,7 +259,11 @@ void Foam::particleIBM::solve
     if (mesh_.findCell(shape_->center_) == -1)
     {
         active_ = 0;
-    };
+    }
+    else
+    {
+        active_ = 1;
+    }
 
     this->track(disp - (position() - x0), 1.0);
 }
