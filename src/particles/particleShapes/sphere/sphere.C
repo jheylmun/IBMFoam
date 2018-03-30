@@ -54,6 +54,8 @@ Foam::particleShapes::sphere::sphere
     particleShape(mesh, dict, center),
     d_(readScalar(dict.lookup("d")))
 {
+    this->momentOfInertia_ = 2.0/5.0*sqr(d_/2.0);
+
     if (!dict_.found("nk_"))
     {
         nk_ = nTheta_/2;

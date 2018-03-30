@@ -56,6 +56,8 @@ Foam::particleShapes::cylinder::cylinder
     axis_(nk_, Zero),
     centeredAxis_(nk_, Zero)
 {
+    this->momentOfInertia_ = sqr(d_/2.0);
+
     if (!dict_.found("nk_"))
     {
         nk_ = 1;

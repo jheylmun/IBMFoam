@@ -95,17 +95,22 @@ void Foam::particleShape::setWeights()
     wFromLocal_ = List<scalarList>(shellCells_.size());
     WFromLocal_ = scalarList(shellCells_.size());
 
-    if (nPtsOnMesh == baseMesh_.size())
-    {
-        onMesh_ = ON_MESH;
-    }
-    else if (nPtsOnMesh == 0)
+    centerIndex_ = mesh_.findCell(center_);
+    if (nPtsOnMesh == 0 && centerIndex_ == -1)
     {
         onMesh_ = OFF_MESH;
     }
+    else if (nPtsOnMesh == baseMesh_.size() && centerIndex_ != -1)
+    {
+        onMesh_ = ON_MESH;
+    }
+    else if (centerIndex_ != -1)
+    {
+        onMesh_ = PARTIAL_WITH_CENTER;
+    }
     else
     {
-        onMesh_ = PARTIAL;
+        onMesh_ = PARTIAL_WITHOUT_CENTER;
     }
 
     forAll(shellCells_, celli)
@@ -132,8 +137,6 @@ void Foam::particleShape::setWeights()
         wFromLocal_[celli] = w;
         WFromLocal_[celli] = W;
     }
-
-    centerIndex_ = mesh_.findCell(center_);
 }
 
 void Foam::particleShape::setNeighbours()
@@ -189,7 +192,7 @@ void Foam::particleShape::setNeighbours()
 
 void Foam::particleShape::setProcs()
 {
-    if (mesh_.findCell(center_) != -1)
+    if (centerIndex_ != -1)
     {
         centerProc_ = Pstream::myProcNo();
     }
@@ -222,9 +225,11 @@ Foam::particleShape::particleShape
     dict_(dict),
     onMesh_(ON_MESH),
     center_(center),
+    momentOfInertia_(HUGE),
     nTheta_(readLabel(dict.lookup("nTheta"))),
-    nk_(dict.lookupOrDefault<label>("nk",1)),
+    nk_(dict.lookupOrDefault<label>("nk", 1)),
     N_(nRadial_*nTheta_*nk_),
+    theta_(dict.lookupOrDefault<vector>("nk", Zero)),
     delta_(readScalar(dict.lookup("delta"))),
     centeredMesh_(N_, Zero),
     baseMesh_(N_,Zero),

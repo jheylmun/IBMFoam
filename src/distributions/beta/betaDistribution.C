@@ -19,34 +19,59 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particleIBM.H"
+#include "gaussianDistribution.H"
+#include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
 
-template<class sType, class fType>
-void Foam::particleIBM::interpolateFromMesh
-(
-    const sType& fieldF,
-    fType& field
-) const
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+namespace Foam
 {
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
-    {
-        return;
-    }
+namespace randomDistributions
+{
+    defineTypeNameAndDebug(gaussian, 0);
 
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
+    addToRunTimeSelectionTable
+    (
+        randomDistribution,
+        gaussian,
+        dictionary
+    );
+}
+}
 
-    forAll(shape_->baseMesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+Foam::randomDistributions::gaussian::gaussian
+(
+    const label seed,
+    const dictionary& dict
+)
+:
+    randomDistribution(seed, dict),
+    mean_(readScalar(dict.lookup("mean"))),
+    variance_(readScalar(dict.lookup("variance")))
+{}
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::randomDistributions::gaussian::~gaussian()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+Foam::scalar Foam::randomDistributions::gaussian::RV()
+{
+    return rand_.scalar01()*variance_ + mean_;
+}
+
+Foam::scalar Foam::randomDistributions::gaussian::moment(const label i) const
+{
+    return 1.0;
 }
 
 // ************************************************************************* //

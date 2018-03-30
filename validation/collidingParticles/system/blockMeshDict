@@ -17,7 +17,7 @@ FoamFile
 convertToMeters 0.1;
 
 D           1.0;
-ptsPerD     15;
+ptsPerD     30;
 
 nDvert      2.0;
 nDup        2.0;

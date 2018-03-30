@@ -27,6 +27,11 @@ Foam::particleShape::locationType Foam::particleShape::onMesh() const
     return onMesh_;
 }
 
+bool Foam::particleShape::centerOnMesh() const
+{
+    return (centerIndex_ != -1);
+}
+
 bool Foam::particleShape::singleProc() const
 {
     forAll(neiProcs_, i)
@@ -82,6 +87,21 @@ Foam::label Foam::particleShape::centerIndex() const
 const Foam::labelList& Foam::particleShape::shellCells() const
 {
     return shellCells_;
+}
+
+const Foam::vector& Foam::particleShape::theta() const
+{
+    return theta_;
+}
+
+Foam::vector& Foam::particleShape::theta()
+{
+    return theta_;
+}
+
+const Foam::scalar& Foam::particleShape::I() const
+{
+    return momentOfInertia_;
 }
 
 const Foam::vector& Foam::particleShape::center() const

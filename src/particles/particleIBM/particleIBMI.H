@@ -28,17 +28,35 @@ Foam::label Foam::particleIBM::index() const
 }
 
 
-Foam::particleShape::locationType Foam::particleIBM::onMesh() const
+bool Foam::particleIBM::onMesh() const
 {
-    return shape_->onMesh();
+    return (shape_->onMesh_ != particleShape::locationType::OFF_MESH);
 }
 
+Foam::label Foam::particleIBM::centerIndex() const
+{
+    return shape_->centerIndex_;
+}
+
+bool Foam::particleIBM::centerOnMesh() const
+{
+    return shape_->centerOnMesh();
+}
+
+bool Foam::particleIBM::singleProc() const
+{
+    return shape_->singleProc();
+}
 
 bool Foam::particleIBM::active() const
 {
     return active_;
 }
 
+bool& Foam::particleIBM::active()
+{
+    return active_;
+}
 
 const Foam::vector& Foam::particleIBM::center() const
 {
@@ -49,6 +67,17 @@ const Foam::vector& Foam::particleIBM::center() const
 Foam::vector& Foam::particleIBM::center()
 {
     return shape_->center_;
+}
+
+const Foam::vector& Foam::particleIBM::theta() const
+{
+    return shape_->theta_;
+}
+
+
+Foam::vector& Foam::particleIBM::theta()
+{
+    return shape_->theta_;
 }
 
 
@@ -118,6 +147,18 @@ Foam::vector& Foam::particleIBM::F()
 }
 
 
+const Foam::vector& Foam::particleIBM::T() const
+{
+    return integratedTorque_;
+}
+
+
+Foam::vector& Foam::particleIBM::T()
+{
+    return integratedTorque_;
+}
+
+
 const Foam::scalar& Foam::particleIBM::age() const
 {
     return age_;
@@ -142,5 +183,26 @@ const Foam::boolList& Foam::particleIBM::neiProcs() const
 {
     return shape_->neiProcs_;
 }
+
+bool Foam::particleIBM::updatedForce() const
+{
+    return updatedForce_;
+}
+
+bool& Foam::particleIBM::updatedForce()
+{
+    return updatedForce_;
+}
+
+bool Foam::particleIBM::updatedPosition() const
+{
+    return updatedPosition_;
+}
+
+bool& Foam::particleIBM::updatedPosition()
+{
+    return updatedPosition_;
+}
+
 
 // ************************************************************************* //

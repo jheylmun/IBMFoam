@@ -11,12 +11,11 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      initialStates;
+    object      IBMproperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-nParticles	1;
-moving false;
+nParticles	5;
+moving true;
 rotating true;
 e 0.9;
 
@@ -28,35 +27,37 @@ flow
 particle.0
 {
     particleShape	cylinder;
-    rho 100;
-    v   (0.2 0.5 0);
-    omega (0 0 10.0);
-    position (0 0 0);
+    rho 10;
+//     v   (0.2 0.5 0);
+//     omega (0 0 3.0);
+    position (-0.1 0 0);
     d 0.1;
     nTheta	300;
-    delta	0.004;
+    delta	0.0025;
 }
 
 particle.1
 {
     particleShape	cylinder;
     rho 100;
-    v   (-.3 0 0);
-    position (0.2 0.05 0);
+//     v   (0 0 0);
+    omega (0 0 3.0);
+    position (0.1 0.1 0);
     d	0.15;
-    nTheta	200;
-    delta	0.004;
+    nTheta	350;
+    delta	0.0025;
 }
 
 particle.2
 {
     particleShape	cylinder;
-    rho 100;
-    v   (0 1 0);
-    position (0.1 -0.15 0);
+    rho 10;
+    v   (0 -1 0);
+//     omega (0 0 5.0);
+    position (-0.1 -0.1 0);
     d	0.05;
-    nTheta	200;
-    delta	0.004;
+    nTheta	250;
+    delta	0.0025;
 }
 
 particle.3
@@ -64,8 +65,21 @@ particle.3
     particleShape	cylinder;
     rho 100;
     v   (0 1 0);
-    position (0 0.075 0);
+    position (-0.1 0.1 0);
     d	0.05;
-    nTheta	200;
-    delta	0.004;
+    nTheta	250;
+    delta	0.0025;
 }
+
+particle.4
+{
+    particleShape	cylinder;
+    rho 100;
+//     v   (0 0 0);
+    omega (0 0 -3.0);
+    position (0.1 -0.1 0);
+    d	0.15;
+    nTheta	350;
+    delta	0.0025;
+}
+// ************************************************************************* //

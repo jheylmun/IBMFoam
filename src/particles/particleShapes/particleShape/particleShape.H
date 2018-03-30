@@ -62,7 +62,8 @@ public:
     enum locationType
     {
         OFF_MESH,
-        PARTIAL,
+        PARTIAL_WITH_CENTER,
+        PARTIAL_WITHOUT_CENTER,
         ON_MESH
     };
 
@@ -94,6 +95,9 @@ protected:
     //- center point
     vector center_;
 
+    //- Moment of inertia
+    scalar momentOfInertia_;
+
     //- number of points in the radial direction (3)
     label nRadial_ = 3;
 
@@ -105,6 +109,9 @@ protected:
 
     //- Total number of grid points
     label N_;
+
+    //- Angle of rotation from 0 rads
+    vector theta_;
 
     //- Delta that is used as the spacing from the actual partical diameter,
     //  ie x_o = pos + delta
@@ -244,6 +251,9 @@ public:
         //- Is the shape on the mesh
         inline locationType onMesh() const;
 
+        //- Is the center point on the mesh
+        inline bool centerOnMesh() const;
+
         //- Is the particle on a single processor
         inline bool singleProc() const;
 
@@ -274,6 +284,12 @@ public:
         //- Return cell in the shell of the surface mesh
         inline const labelList& shellCells() const;
 
+        //- Return angle of rotation
+        inline const vector& theta() const;
+
+        //- Non-const reference to angle of rotation
+        inline vector& theta();
+
         //- Particle diameter, or equivelant diameter
         virtual scalar d() const = 0;
 
@@ -282,6 +298,9 @@ public:
 
         //- Particle volume
         virtual scalar V() const = 0;
+
+        //- Particle moment of inertia
+        inline const scalar& I() const;
 
         //- Return center of mass
         inline const vector& center() const;

@@ -22,7 +22,6 @@ License
 #include "particleIBM.H"
 #include "particleShape.H"
 #include "wallFvPatch.H"
-#include "face.H"
 
 namespace Foam
 {
@@ -64,7 +63,8 @@ void Foam::particleIBM::interpolateFToMesh
                 ws[celli][pti]/W[celli]
                *(
                     (
-                        this->v() - U[Os[celli][pti]]
+                        v(shape_->centeredMesh_[Os[celli][pti]])
+                      - U[Os[celli][pti]]
                       - Uold[Is[celli][pti]]
                     )/dT
                   + S[Is[celli][pti]]
@@ -77,7 +77,7 @@ void Foam::particleIBM::interpolateFToMesh
                 ws[celli][pti]/W[celli]
                *(
                     (
-                        this->v()
+                        v(shape_->centeredMesh_[Is[celli][pti]])
                       - Uold[Is[celli][pti]]
                     )/dT
                   + S[Is[celli][pti]]
@@ -85,6 +85,12 @@ void Foam::particleIBM::interpolateFToMesh
         }
         F[i] += Fi;
     }
+}
+
+
+Foam::vector Foam::particleIBM::v(const vector& pt) const
+{
+    return -(pt - shape_->center_)^omega_;
 }
 
 
@@ -230,7 +236,16 @@ Foam::particleIBM::particleIBM
     rho_(p.rho_),
     age_(p.age_),
     integratedForce_(p.integratedForce_)
-{}
+{
+    if (shape_->centerOnMesh())
+    {
+        active_ = 1;
+    }
+    else
+    {
+        active_ = 0;
+    }
+}
 
 
 Foam::particleIBM::~particleIBM()
@@ -246,26 +261,24 @@ Foam::particleIBM::~particleIBM()
 
 void Foam::particleIBM::solve
 (
-    const scalar& dt
+    const scalar& dt,
+    const bool moving,
+    const bool rotation
 )
 {
-    vector disp = dt*v_;
-
-    vector x0 = shape_->center_;
-    shape_->center_ += disp;
-    v_ += dt*integratedForce_/mass();
-    update();
-
-    if (mesh_.findCell(shape_->center_) == -1)
+    if (moving)
     {
-        active_ = 0;
-    }
-    else
-    {
-        active_ = 1;
+        v_ += dt*integratedForce_/mass();
+        vector dx = dt*v_;
+        shape_->center_ += dx;
     }
 
-    this->track(disp - (position() - x0), 1.0);
+    if (rotation)
+    {
+        vector dTheta = omega_*dt;
+        shape_->theta() += dTheta;
+        omega_ += dt*integratedTorque_/(mass()*shape_->I());
+    }
 }
 
 
@@ -280,19 +293,19 @@ void Foam::particleIBM::wallHit
         {
             forAll(mesh.boundary()[patchi], facei)
             {
-                Foam::face minFace = mesh_.boundaryMesh()[patchi][facei];
-                vector faceCentre = minFace.centre(mesh.points());
+                const vector& faceCentre =
+                    mesh.Cf().boundaryField()[patchi][facei];
+                vector norm =
+                    mesh.Sf().boundaryField()[patchi][facei]
+                   /mesh.magSf().boundaryField()[patchi][facei];
 
                 scalar dist = mag(center() - faceCentre);
-                if (dist <= (r(faceCentre) + 1e-10))
+                if (dist <= r(faceCentre) && (v_ & norm) > 0)
                 {
-                    vector norm =
-                        minFace.normal(mesh.points())/minFace.mag(mesh.points());
-
                     vector normv = norm*(norm & v_);
-                    vector tanv = v_ - normv;
+                    v_ -= 2.0*normv;
 
-                    v_ = tanv - normv;
+                    continue;
                 }
             }
         }
@@ -314,9 +327,9 @@ void Foam::particleIBM::forcing
     vectorField interpolatedUold(N, Zero);
     vectorField interpolatedS(N, Zero);
 
-    interpolateFromMesh<vector>(Uf,interpolatedU);
-    interpolateFromMesh<vector>(Ufold,interpolatedUold);
-    interpolateFromMesh<vector>(Sf,interpolatedS);
+    interpolateFromMesh(Uf,interpolatedU);
+    interpolateFromMesh(Ufold,interpolatedUold);
+    interpolateFromMesh(Sf,interpolatedS);
 
     interpolateFToMesh(interpolatedU,interpolatedUold,interpolatedS,F);
 }
@@ -334,18 +347,27 @@ void Foam::particleIBM::integrateSurfaceStress
     interpolateFromMesh(pf,interpolatedP);
 
     integratedForce_ = Zero;
+    integratedTorque_ = Zero;
 
     for (label i = 0; i < shape_->nTheta(); i++)
     {
         for (label k = 0; k < shape_->nk(); k++)
         {
+            const vector& pt = shape_->centeredMesh_[shape_->index2(i,k)];
+            const vector& Sf = shape_->Sf_[shape_->index2(i,k)];
+            scalar magSf = mag(Sf);
+            vector norm = Sf/magSf;
+            const symmTensor& tau = interpolatedTau[shape_->index(1,i,k)];
+            vector F = tau & norm;
+            vector nStress = (F & norm)*norm;
+            vector tStress = F - nStress;
+
             integratedForce_ +=
                 interpolatedP[shape_->index(1,i,k)]
                *shape_->Sf_[shape_->index2(i,k)]
-              + (
-                    interpolatedTau[shape_->index(1,i,k)]
-                  & shape_->Sf_[shape_->index2(i,k)]
-                );
+              + nStress*magSf;
+
+            integratedTorque_ -= (tStress*magSf)^pt;
         }
     }
 }
@@ -378,9 +400,4 @@ void Foam::particleIBM::update()
 {
     shape_->moveMesh(shape_->center_);
     shape_->updateCellLists();
-
-    if (shape_->centerProc_ != -1)
-    {
-        position() = shape_->center_;
-    }
 }

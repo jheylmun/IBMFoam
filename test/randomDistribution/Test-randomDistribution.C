@@ -2,51 +2,70 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2014-2017 Alberto Passalacqua
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of OpenFOAM.
+    This file is derivative work of OpenFOAM.
+
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
+
     OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
+
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+Application
+    Test-UnivariateMomentInversion
+
+Description
+    Test univariateMomentInversion class and methods.
+
 \*---------------------------------------------------------------------------*/
 
-#include "particleIBM.H"
+#include "IOmanip.H"
+#include "IFstream.H"
+#include "OFstream.H"
+#include "scalarMatrices.H"
+#include "IOdictionary.H"
+#include "randomDistribution.H"
 
-// * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
+using namespace Foam;
 
-template<class sType, class fType>
-void Foam::particleIBM::interpolateFromMesh
-(
-    const sType& fieldF,
-    fType& field
-) const
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+int main(int argc, char *argv[])
 {
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
+    Info << "Testing randomDistributions\n" << endl;
+
+    label nSamples = 10000;
+
+    Info<< "Reading distributionProperties\n" << endl;
+
+    dictionary distributionProperties(IFstream("distributionProperties")());
+
+    autoPtr<randomDistribution> rand
+    (
+        randomDistribution::New(127, distributionProperties)
+    );
+
+    OFstream outputFile("./randomNumbers");
+
+    for (label i = 0; i < nSamples; i++)
     {
-        return;
+        outputFile << rand->RV() << endl;
     }
 
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
+    Info << "\nEnd\n" << endl;
 
-    forAll(shape_->baseMesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
+    return 0;
 }
+
 
 // ************************************************************************* //

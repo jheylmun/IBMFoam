@@ -96,8 +96,11 @@ class particleCloud
         //- IBM source terms (advection, pressure, and viscous stress)
         volVectorField S_;
 
-        // Switch if particles are moving
+        //- Switch if particles are moving
         Switch moving_;
+
+        //- Switch if particles are rotating
+        Switch rotating_;
 
         //- Are there walls?
         bool walls_;
@@ -120,6 +123,18 @@ class particleCloud
         //- Change particle velocities due to wall collisions
         void computeWallHits();
 
+        //- Find particle based on index
+        const particleIBM* findParticle(const label index) const;
+
+        //- Find particle based on index
+        particleIBM* findParticle(const label index);
+
+        //- Set sorces of particles that have points on mesh,
+        void setInActiveParticleForces();
+
+        //- Set positions of particles that have points on mesh,
+        //  but not the center
+        void setInActiveParticlePositions();
 
     // Combine fields ops
 
@@ -133,12 +148,24 @@ class particleCloud
             void operator()(T& x, const T& y) const
             {
                 x += y;
-//                 x.setSize(x.size());
-//
-//                 forAll(y, i)
-//                 {
-//                     x[i] += y[i];
-//                 }
+            }
+        };
+
+        //- Add over procs
+        template<class T>
+        class ListPlusEqOp
+        {
+
+        public:
+
+            void operator()(T& x, const T& y) const
+            {
+                x.setSize(x.size());
+
+                forAll(y, i)
+                {
+                    x[i] += y[i];
+                }
             }
         };
 
@@ -220,7 +247,7 @@ public:
 
         //- Advance in time, update velocities based on force from fluid, and
         //  move particles in space.
-        void operator++();
+        void solve();
 
 
     // Read

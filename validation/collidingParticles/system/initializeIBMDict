@@ -18,25 +18,29 @@ particleSizeDistribution monodisperse;
 
 flow
 {
-    UInf            (0.3 0 0);
+    UInf            (1 0 0);
     rho             rhoInf;
-    rhoInf          1.4;
+    rhoInf          1.0;
 }
+
 PSD
 {
-    nParticles      1;
-    deltaR          0.18;
+    volumeFraction  .1;
+    deltaR          0.004;
+
+    bb1              (-0.2 -0.2 -0.01);
+    bb2              (0.4 0.2 0.01);
 
 }
 
 baseParticle
 {
-    p1              (0 0 -0.5);
-    p2              (0 0 0.5);
+    p1              (0 0 0);
+    p2              (0 0 0);
     d               0.1;
-    nTheta          160;
-    nk              1;
-    delta           0.003;
+    nTheta          100;
+    nk		    50;
+    delta           0.005;
 }
 
 // ************************************************************************* //

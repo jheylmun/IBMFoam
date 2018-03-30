@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        ++particles;
+        particles.solve();
 
         runTime.write();
 

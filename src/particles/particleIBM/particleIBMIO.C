@@ -85,6 +85,8 @@ void Foam::particleIBM::writeFields(const Cloud<particleIBM>& c)
 
     IOField<label> index(c.fieldIOobject("index", IOobject::NO_READ), np);
     IOField<label> active(c.fieldIOobject("active", IOobject::NO_READ), np);
+    IOField<vector> center(c.fieldIOobject("center", IOobject::NO_READ), np);
+    IOField<label> centerI(c.fieldIOobject("centerI", IOobject::NO_READ), np);
     IOField<scalar> d(c.fieldIOobject("d", IOobject::NO_READ), np);
     IOField<vector> v(c.fieldIOobject("v", IOobject::NO_READ), np);
     IOField<vector> omega(c.fieldIOobject("omega", IOobject::NO_READ), np);
@@ -99,6 +101,8 @@ void Foam::particleIBM::writeFields(const Cloud<particleIBM>& c)
 
         index[i] = p.index();
         active[i] = p.active();
+        center[i] = p.center();
+        centerI[i] = p.centerIndex();
         d[i] = p.d();
         v[i] = p.v();
         omega[i] = p.omega();
@@ -109,13 +113,15 @@ void Foam::particleIBM::writeFields(const Cloud<particleIBM>& c)
 
     const bool valid = np > 0;
 
-    index.write();
+    index.write(valid);
     active.write(valid);
+    center.write(valid);
+    centerI.write(valid);
     d.write(valid);
     v.write(valid);
     omega.write(valid);
     rho.write(valid);
-    age.write();
+    age.write(valid);
 }
 
 

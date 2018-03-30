@@ -19,34 +19,64 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particleIBM.H"
+#include "exponentialDistribution.H"
+#include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
 
-template<class sType, class fType>
-void Foam::particleIBM::interpolateFromMesh
-(
-    const sType& fieldF,
-    fType& field
-) const
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+namespace Foam
 {
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
-    {
-        return;
-    }
+namespace randomDistributions
+{
+    defineTypeNameAndDebug(exponential, 0);
 
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
+    addToRunTimeSelectionTable
+    (
+        randomDistribution,
+        exponential,
+        dictionary
+    );
+}
+}
 
-    forAll(shape_->baseMesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+Foam::randomDistributions::exponential::exponential
+(
+    const label seed,
+    const dictionary& dict
+)
+:
+    randomDistribution(seed, dict),
+    mean_(readScalar(dict.lookup("mean")))
+{}
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::randomDistributions::exponential::~exponential()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+Foam::scalar Foam::randomDistributions::exponential::RV()
+{
+    return -log(rand_.scalar01())/mean_;
+}
+
+Foam::scalar Foam::randomDistributions::exponential::moment(const label i) const
+{
+    return pow(-1*mean_, i);
+}
+
+Foam::scalar Foam::randomDistributions::exponential::moment(const scalar i) const
+{
+    NotImplemented;
+    return 1.0;
 }
 
 // ************************************************************************* //

@@ -102,18 +102,24 @@ protected:
     //- Total force acting on the particle
     vector integratedForce_;
 
+    //- Total torque actig on particle surface
+    vector integratedTorque_;
+
     //- Pointer to same particle, but across cyclic or processor
     particleIBM* particlePtr_;
 
+    //- Are fields combined over procs
+    bool updatedForce_;
+    bool updatedPosition_;
 
     // Protected member fuctions
 
         //- Interpolate a given field from the global mesh on the the shellMesh
-        template<class type>
+        template<class sType, class fType>
         void interpolateFromMesh
         (
-            const GeometricField<type, fvsPatchField, surfaceMesh>& fieldF,
-            Field<type>& field
+            const sType& fieldF,
+            fType& field
         ) const;
 
         //- Interpolate F field to global mesh given U and rho
@@ -124,6 +130,9 @@ protected:
             const vectorList& S,
             volVectorField& F
         ) const;
+
+        //- Return the surface velocity given a point from the centered mesh
+        vector v(const vector& pt) const;
 
 
 public:
@@ -190,10 +199,19 @@ public:
         inline label index() const;
 
         //- Is any part of the particle on the mesh
-        inline particleShape::locationType onMesh() const;
+        inline bool onMesh() const;
+
+        //- Is the particle on a single processor
+        inline bool singleProc() const;
+
+        //- Is the center of the particle on the mesh
+        inline bool centerOnMesh() const;
+
+        inline label centerIndex() const;
 
         //- Is the particle active?
         inline bool active() const;
+        inline bool& active();
 
         //- Center of particle
         //  Different from position of particle class so center of particle can
@@ -201,6 +219,11 @@ public:
         inline const vector& center() const;
 
         inline vector& center();
+
+        //- Angular displacement
+        inline const vector& theta() const;
+
+        inline vector& theta();
 
         //- Return the particle mass
         inline scalar r(const vector& x2) const;
@@ -235,6 +258,12 @@ public:
         //- Return total force acting on particle
         inline vector& F();
 
+        //- Return total torque acting on particle
+        inline const vector& T() const;
+
+        //- Return total torque acting on particle
+        inline vector& T();
+
         //- Return the age of the particle
         inline const scalar& age() const;
 
@@ -244,6 +273,16 @@ public:
         //- Return the pointer to another copy of the particle
         inline particleIBM* particlePtr();
 
+        //- Is the force updated
+        inline bool updatedForce() const;
+        inline bool& updatedForce();
+
+        //- Is the position updated
+        inline bool updatedPosition() const;
+        inline bool& updatedPosition();
+
+        //- Reset update bools
+        inline void resetUpdate();
 
     //- Mpi data access
 
@@ -273,7 +312,12 @@ public:
         );
 
         //- Move particles in space
-        void solve(const scalar& dt);
+        void solve
+        (
+            const scalar& dt,
+            const bool moving,
+            const bool rotating
+        );
 
         //- Compute wall hits
         void wallHit(const fvMesh& mesh);

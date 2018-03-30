@@ -1,0 +1,78 @@
+#!/bin/sh
+#------------------------------------------------------------------------------
+# =========                 |
+# \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+#  \\    /   O peration     |
+#   \\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
+#    \\/     M anipulation  |
+#-------------------------------------------------------------------------------
+#2015-06-01 Alberto Passalacqua: Adapted script to pbeFoam validation cases
+#-------------------------------------------------------------------------------
+# License
+#     This file is derivative work of OpenFOAM.
+#
+#     OpenFOAM is free software: you can redistribute it and/or modify it
+#     under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+#     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#     for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Script
+#     createGraphs
+#
+# Description
+#     Creates .eps graph of d43 = moment.4/moment.3 comparing OpenQBMM results,
+#     Madadi and Passalacqua (2015) EQMOM solution, and Vanni (2000) rigorous
+#     solution.
+#
+#------------------------------------------------------------------------------
+
+createEpsD43()
+{
+    gnuplot<<EOF
+
+    stats "$1" using 1 name "C" noout
+
+    binwidth = 200
+    xlow = C_min
+    xhigh = C_max
+    scale = (binwidth/(xhigh-xlow))
+    bin(x) = (1.0/scale)*floor(x*scale)
+
+    set terminal postscript eps enhanced color font 'Helvetica,24' linewidth 2
+    set output "histogram.eps"
+    set xlabel "X"
+    set ylabel "number"
+    set grid
+    set size 1,1
+    set autoscale
+
+    plot '$1' using (bin(\$1)):(1) smooth frequency with boxes
+
+EOF
+}
+
+# test if gnuplot exists on the system
+if ! which gnuplot > /dev/null 2>&1
+then
+    echo "gnuplot not found - skipping graph creation" >&2
+    exit 1
+fi
+
+# paths to data
+RVs="randomNumbers"
+
+echo "    processing d43 profile" > log.createGraphs 2>&1
+
+createEpsD43 $RVs
+
+echo Done
+
+#------------------------------------------------------------------------------

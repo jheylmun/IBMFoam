@@ -19,34 +19,41 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particleIBM.H"
+#include "randomDistribution.H"
 
-// * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-template<class sType, class fType>
-void Foam::particleIBM::interpolateFromMesh
-(
-    const sType& fieldF,
-    fType& field
-) const
+namespace Foam
 {
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
-    {
-        return;
-    }
-
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
-
-    forAll(shape_->baseMesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
+    defineTypeNameAndDebug(randomDistribution, 0);
+    defineRunTimeSelectionTable(randomDistribution, dictionary);
 }
+
+
+// * * * * * * * * * * * *  Protected Member Functions * * * * * * * * * * * //
+
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+Foam::randomDistribution::randomDistribution
+(
+    const label seed,
+    const dictionary& dict
+)
+:
+    dict_(dict),
+    rand_(seed),
+    minVal_(dict.lookupOrDefault("minVal", -HUGE)),
+    maxVal_(dict.lookupOrDefault("maxVal", HUGE))
+{}
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::randomDistribution::~randomDistribution()
+{}
+
+// * * * * * * * * * * * * * * Public Member Functions * * * * * * * * * * * * //
+
 
 // ************************************************************************* //

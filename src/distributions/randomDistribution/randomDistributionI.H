@@ -19,34 +19,8 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particleIBM.H"
 
-// * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
 
-template<class sType, class fType>
-void Foam::particleIBM::interpolateFromMesh
-(
-    const sType& fieldF,
-    fType& field
-) const
-{
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
-    {
-        return;
-    }
-
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
-
-    forAll(shape_->baseMesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
-}
 
 // ************************************************************************* //

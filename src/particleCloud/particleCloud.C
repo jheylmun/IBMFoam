@@ -217,8 +217,285 @@ void Foam::particleCloud::computeWallHits()
     }
 }
 
+const Foam::particleIBM* Foam::particleCloud::findParticle(const label index) const
+{
+    forAllConstIter
+    (
+        typename Cloud<particleIBM>,
+        *this,
+        pIter
+    )
+    {
+        if(pIter().index() == index)
+        {
+            return &pIter();
+        }
+    }
+    return 0;
+}
 
-// * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
+Foam::particleIBM* Foam::particleCloud::findParticle(const label index)
+{
+    forAllIter
+    (
+        typename Cloud<particleIBM>,
+        *this,
+        pIter
+    )
+    {
+        if(pIter().index() == index)
+        {
+            return &pIter();
+        }
+    }
+    return 0;
+}
+
+void Foam::particleCloud::setInActiveParticleForces()
+{
+    if (Pstream::parRun())
+    {
+        forAllIter
+        (
+            typename Cloud<particleIBM>,
+            *this,
+            pIter
+        )
+        {
+            pIter().updatedForce() = false;
+        }
+
+        for
+        (
+            label proci = 0;
+            proci < Pstream::nProcs();
+            proci++
+        )
+        {
+            Cloud<particleIBM>::const_iterator pIter = (*this).begin();
+            boolList end(1, false);
+            if (Pstream::myProcNo() == proci)
+            {
+                if ((*this).cend() == pIter)
+                {
+                    end = true;
+                }
+            }
+            combineReduce
+            (
+                end,
+                ListPlusEqOp<boolList>()
+            );
+
+            while (!end[0])
+            {
+                labelList pIndex(1, 0);
+                boolList pUpdated(1, false);
+
+                if (Pstream::myProcNo() == proci)
+                {
+                    const particleIBM& p = pIter();
+                    pIndex[0] = p.index();
+                    pUpdated[0] = p.updatedForce();
+                }
+                combineReduce
+                (
+                    pIndex,
+                    ListPlusEqOp<labelList>()
+                );
+                combineReduce
+                (
+                    pUpdated,
+                    ListPlusEqOp<boolList>()
+                );
+
+                if (!pUpdated[0])
+                {
+                    particleIBM* pPtr = findParticle(pIndex[0]);
+
+                    vector totF(Zero);
+                    if (pPtr)
+                    {
+                        totF += pPtr->F();
+                    }
+                    combineReduce
+                    (
+                        totF,
+                        plusEqOp<vector>()
+                    );
+
+                    if (pPtr)
+                    {
+                        pPtr->F() = totF;
+                        pPtr->updatedForce() = true;
+                    }
+                }
+
+                end = false;
+                if (Pstream::myProcNo() == proci)
+                {
+                    ++pIter;
+                    if ((*this).cend() == pIter)
+                    {
+                        end = true;
+                    }
+                }
+                combineReduce
+                (
+                    end,
+                    ListPlusEqOp<boolList>()
+                );
+            }
+        }
+    }
+}
+
+
+void Foam::particleCloud::setInActiveParticlePositions()
+{
+    if (Pstream::parRun())
+    {
+        forAllIter
+        (
+            typename Cloud<particleIBM>,
+            *this,
+            pIter
+        )
+        {
+            particleIBM& p = pIter();
+            if (p.centerOnMesh())
+            {
+                p.active() = true;
+            }
+            else
+            {
+                p.active() = false;
+            }
+            p.updatedPosition() = false;
+        }
+
+        for
+        (
+            label proci = 0;
+            proci < Pstream::nProcs();
+            proci++
+        )
+        {
+            Cloud<particleIBM>::const_iterator pIter = (*this).begin();
+            boolList end(1, false);
+            if (Pstream::myProcNo() == proci)
+            {
+                if ((*this).cend() == pIter)
+                {
+                    end = true;
+                }
+            }
+            combineReduce
+            (
+                end,
+                ListPlusEqOp<boolList>()
+            );
+
+            while (!end[0])
+            {
+                labelList pIndex(1, 0);
+                boolList pActive(1, false);
+
+                if (Pstream::myProcNo() == proci)
+                {
+                    const particleIBM& p = pIter();
+                    pIndex[0] = p.index();
+                    pActive[0] = p.active();
+
+                }
+                combineReduce
+                (
+                    pIndex,
+                    ListPlusEqOp<labelList>()
+                );
+                combineReduce
+                (
+                    pActive,
+                    ListPlusEqOp<boolList>()
+                );
+
+                if (pActive[0])
+                {
+                    vector pCenter(Zero);
+                    vector pTheta(Zero);
+                    vector pV(Zero);
+                    vector pOmega(Zero);
+
+                    if (Pstream::myProcNo() == proci)
+                    {
+                        const particleIBM& p = pIter();
+                        pCenter = p.center();
+                        pTheta = p.theta();
+                        pV = p.v();
+                        pOmega = p.omega();
+                    }
+
+                    combineReduce
+                    (
+                        pCenter,
+                        plusEqOp<vector>()
+                    );
+                    combineReduce
+                    (
+                        pTheta,
+                        plusEqOp<vector>()
+                    );
+                    combineReduce
+                    (
+                        pV,
+                        plusEqOp<vector>()
+                    );
+                    combineReduce
+                    (
+                        pOmega,
+                        plusEqOp<vector>()
+                    );
+
+                    particleIBM* pPtr = findParticle(pIndex[0]);
+                    if (pPtr && !pPtr->updatedPosition())
+                    {
+                        pPtr->center() = pCenter;
+                        pPtr->track(pPtr->center() - pPtr->position(), 1.0);
+
+                        pPtr->theta() = pTheta;
+                        pPtr->v() = pV;
+                        pPtr->omega() = pOmega;
+                    }
+                }
+                end = false;
+                if (Pstream::myProcNo() == proci)
+                {
+                    ++pIter;
+                    if ((*this).cend() == pIter)
+                    {
+                        end = true;
+                    }
+                }
+                combineReduce
+                (
+                    end,
+                    ListPlusEqOp<boolList>()
+                );
+            }
+        }
+    }
+    forAllIter
+    (
+        typename Cloud<particleIBM>,
+        *this,
+        pIter
+    )
+    {
+        pIter().update();
+    }
+}
+
+// * * * * * * * * * * * * * * * Constructor * * * * * * * * * * * * * * * * //
 
 Foam::particleCloud::particleCloud
 (
@@ -236,7 +513,7 @@ Foam::particleCloud::particleCloud
     (
         IOobject
         (
-            "initialStates",
+            "IBMProperties",
             mesh.time().constant(),
             mesh,
             IOobject::MUST_READ,
@@ -286,7 +563,8 @@ Foam::particleCloud::particleCloud
         mesh,
         dimensionedVector("zero", dimAcceleration, Zero)
     ),
-    moving_(dict_.lookup("moving"))
+    moving_(dict_.lookup("moving")),
+    rotating_(dict_.lookup("rotating"))
 {
     for (label i = 0; i < nParticles_; i++)
     {
@@ -311,12 +589,12 @@ Foam::particleCloud::particleCloud
         );
     }
 
-//     forAllIter(typename Cloud<particleIBM>, *this, pIter)
+//     forAllIter(typename Cc.mesh().findCell(p.center()loud<particleIBM>, *this, pIter)
 //     {
 //         particleIBM& p = pIter();
 //         if (p.onMesh() == particleShape::locationType::OFF_MESH)
 //         {
-//             delete(this->remove(pIter));
+//             this->deleteParticle(p);
 //         }
 //     }
 
@@ -330,6 +608,8 @@ Foam::particleCloud::particleCloud
     }
 }
 
+
+// * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * * //
 
 Foam::particleCloud::~particleCloud()
 {}
@@ -403,70 +683,6 @@ void Foam::particleCloud::integrateSurfaceStresses()
         particleIBM& p = pIter();
         p.integrateSurfaceStress(tauf,pf);
     }
-
-    if (Pstream::parRun())
-    {
-        for
-        (
-            label proci = 0;
-            proci < Pstream::nProcs();
-            proci++
-        )
-        {
-            forAllConstIter
-            (
-                typename Cloud<particleIBM>,
-                *this,
-                pIter
-            )
-            {
-                const particleIBM& p = pIter();
-                label pIndex = -1;
-
-                if (Pstream::myProcNo() == proci)
-                {
-                    pIndex = p.index();
-                }
-
-                vector totF(Zero);
-                forAllConstIter
-                (
-                    typename Cloud<particleIBM>,
-                    *this,
-                    pIter2
-                )
-                {
-                    const particleIBM& p2 = pIter2();
-
-                    if (p2.index() == pIndex)
-                    {
-                        totF += p2.F();
-                    }
-                }
-
-                combineReduce
-                (
-                    totF,
-                    plusEqOp<vector>()
-                );
-
-                forAllIter
-                (
-                    typename Cloud<particleIBM>,
-                    *this,
-                    pIter2
-                )
-                {
-                    particleIBM& p2 = pIter2();
-
-                    if (p2.index() == pIndex)
-                    {
-                        p2.F() = totF;
-                    }
-                }
-            }
-        }
-    }
 }
 
 void Foam::particleCloud::Cd(IOField<scalar>& Cds) const
@@ -479,27 +695,29 @@ void Foam::particleCloud::Cd(IOField<scalar>& Cds) const
     }
 }
 
-void Foam::particleCloud::operator++()
+void Foam::particleCloud::solve()
 {
     integrateSurfaceStresses();
-    if (!moving_)
+    setInActiveParticleForces();
+
+    if (moving_)
     {
-        return;
+        computeCollisions();
+        computeWallHits();
     }
-    computeCollisions();
-    computeWallHits();
     scalar dt = mesh_.time().deltaT().value();
 
     vector avgV = Zero;
-    scalar avgP = 0.0;
+    vector avgOmega = Zero;
+    vector avgP = Zero;
     forAllIter(typename Cloud<particleIBM>, *this, pIter)
     {
         particleIBM& p = pIter();
 
-        label initProc = p.centerProc();
-        const boolList& initNeiProcs = p.neiProcs();
+//         label initProc = p.centerProc();
+//         const boolList& initNeiProcs = p.neiProcs();
 
-        p.solve(dt);
+        p.solve(dt, moving_, rotating_);
 
 //         label procNo = Pstream::myProcNo();
 //         if
@@ -520,10 +738,14 @@ void Foam::particleCloud::operator++()
 //             append(new particleIBM(const_cast<const particleIBM&>(p)));
 //         }
 
+        avgOmega += p.omega();
         avgV += p.v();
-        avgP += mag(p.v())*p.mass();
+        avgP += p.v()*p.mass();
     }
 
+    setInActiveParticlePositions();
+
     Info<< "    Average velocity: " << avgV << nl
+        << "    Average omega: " << avgOmega << nl
         << "    Average momentum: " << avgP << endl;
 }

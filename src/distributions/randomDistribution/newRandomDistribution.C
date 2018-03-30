@@ -19,34 +19,36 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particleIBM.H"
+#include "randomDistribution.H"
+#include "dictionary.H"
 
-// * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
 
-template<class sType, class fType>
-void Foam::particleIBM::interpolateFromMesh
+Foam::autoPtr<Foam::randomDistribution> Foam::randomDistribution::New
 (
-    const sType& fieldF,
-    fType& field
-) const
+    const label seed,
+    const dictionary& dict
+)
 {
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
+    const word modelType(dict.lookup("type"));
+
+    Info<< "Selecting distribution shape " << modelType << endl;
+
+    dictionaryConstructorTable::iterator cstrIter =
+        dictionaryConstructorTablePtr_->find(modelType);
+
+    if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
-        return;
+        FatalErrorInFunction
+            << "Unknown distribution type "
+            << modelType << nl << nl
+            << "Valid distributions are : " << endl
+            << dictionaryConstructorTablePtr_->sortedToc()
+            << exit(FatalError);
     }
 
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
-
-    forAll(shape_->baseMesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
+    return autoPtr<randomDistribution>(cstrIter()(seed, dict));
 }
+
 
 // ************************************************************************* //

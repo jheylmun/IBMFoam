@@ -11,21 +11,12 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      IBMproperties;
+    object      quadratureProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-nParticles 1;
 
-particle.0
-{
-    particleShape   sphere;
-    p1              (0 0 -0.3);
-    p2              (0 0 0.3);
-    center          (0 0 0);
-    d               0.1;
-    nTheta          40;
-    nk              30;
-    delta           0.01;
-}
+type exponential;
+mean 1.0;
+variance 5.0;
 
 // ************************************************************************* //
