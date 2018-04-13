@@ -60,7 +60,7 @@ public:
     TypeName("exponential");
 
     // Constructor
-    exponential(const label seed, const dictionary& dict);
+    exponential(const dictionary& dict);
 
     //- Destructor
     virtual ~exponential();
@@ -69,7 +69,7 @@ public:
     // Public functions
 
         //- Return a exponential random variable
-        virtual scalar RV();
+        virtual scalar RV(Random& rv);
 
         //- Return the ith statistical moment
         virtual scalar moment(const label i) const;

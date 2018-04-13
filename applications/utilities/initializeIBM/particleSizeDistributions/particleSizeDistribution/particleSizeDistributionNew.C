@@ -42,7 +42,7 @@ Foam::IBM::particleSizeDistribution::New
     if (cstrIter == dictionaryConstructorTablePtr_->end())
     {
         FatalErrorInFunction
-            << "Unknown particle shape type "
+            << "Unknown particle sixe distribution type "
             << modelType << nl << nl
             << "Valid particleSizeDistributions are : " << endl
             << dictionaryConstructorTablePtr_->sortedToc()

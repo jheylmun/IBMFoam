@@ -86,9 +86,6 @@ protected:
     //- fvMesh
     const polyMesh& mesh_;
 
-    //- dictionary
-    const dictionary& dict_;
-
     //- Is the particle on the mesh
     locationType onMesh_;
 
@@ -118,13 +115,16 @@ protected:
     scalar delta_;
 
     //- Mesh centered at (0,0,0)
-    vectorList centeredMesh_;
+    vectorField centeredMesh_;
 
     //- Base mesh since particles do not deform
-    vectorList baseMesh_;
+    vectorField baseMesh_;
+
+    //- Rotation matrix
+    tensor rotationMatrix_;
 
     //- Surface normal vector time surface area
-    vectorList Sf_;
+    vectorField Sf_;
 
     //- Cell containing center of shape
     label centerIndex_;
@@ -198,8 +198,17 @@ protected:
         //- Set surface areas and surface normals
         virtual void calcSf() = 0;
 
+        //- Rotate mesh
+        virtual tmp<vectorField> rotate()
+        {
+            return centeredMesh_;
+        }
+
         //- Set owner and neighbour processors
         void setProcs();
+
+        //- Return the rotation tensor
+        void setRotationMatrix();
 
 
 public:
@@ -221,6 +230,19 @@ public:
         (mesh, dict, center)
     );
 
+    declareRunTimeSelectionTable
+    (
+        autoPtr,
+        particleShape,
+        copy,
+        (
+            const particleShape& shape,
+            const vector& center,
+            const vector& theta
+        ),
+        (shape, center, theta)
+    );
+
     // Selectors
 
         static autoPtr<particleShape> New
@@ -230,15 +252,30 @@ public:
             const vector& center
         );
 
+        static autoPtr<particleShape> New
+        (
+            const particleShape& shape,
+            const vector& center,
+            const vector& theta
+        );
+
 
     // Constructors
 
-        // Construct particle from dictionary entry
+        // Construct shape from dictionary entry
         particleShape
         (
             const polyMesh& mesh,
             const dictionary& dict,
             const vector& center
+        );
+
+        // Construct as a copy
+        particleShape
+        (
+            const particleShape& shape,
+            const vector& center,
+            const vector& theta
         );
 
 
@@ -261,7 +298,7 @@ public:
         inline const vectorList& mesh() const;
 
         //- Return surface normals
-        inline const vectorList& Sf() const;
+        inline tmp<vectorField> Sf() const;
 
         //- Return delta
         inline const scalar& delta() const;
@@ -294,7 +331,7 @@ public:
         virtual scalar d() const = 0;
 
         //- Frontal Area
-        virtual scalar A() const = 0;
+        virtual scalar A(const vector& pt) const = 0;
 
         //- Particle volume
         virtual scalar V() const = 0;
@@ -326,7 +363,7 @@ public:
         virtual void discretize() = 0;
 
         //- Move mesh from (0,0,0) to CoM
-        virtual void moveMesh(const vector& center);
+        void moveMesh(const vector& center);
 
 
     // Ostream Operator

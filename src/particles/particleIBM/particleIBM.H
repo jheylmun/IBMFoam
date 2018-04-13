@@ -75,11 +75,12 @@ protected:
     //- Reference to mesh
     const polyMesh& mesh_;
 
-    //- Dictionary used to constuct particle
-    const dictionary& dict_;
-
-    //- Particle name
+    //- Particle index
     label index_;
+
+    //- Particle copy number
+    //  Used to differentiate particles across cyclic BCs
+    label copy_;
 
     //- Is the partice active
     bool active_;
@@ -102,11 +103,20 @@ protected:
     //- Total force acting on the particle
     vector integratedForce_;
 
+    //- Total force acting on the particle at the start of sub-time steps
+    vector integratedForceOld_;
+
     //- Total torque actig on particle surface
     vector integratedTorque_;
 
-    //- Pointer to same particle, but across cyclic or processor
-    particleIBM* particlePtr_;
+    //- Total torque actig on particle surface at the start of sub-time steps
+    vector integratedTorqueOld_;
+
+    //- Force due to particle-particle and wall collisions
+    vectorField collisionForces_;
+
+    //- Forces due to particle-wall collisions
+    vectorField wallForces_;
 
     //- Are fields combined over procs
     bool updatedForce_;
@@ -141,37 +151,13 @@ public:
 
     // Constructors
 
-        //- Construct from a position and a cell, searching for the rest of the
-        //  required topology. Other properties are initialised as null.
+        //- Construct from a dictionary, used as initial construction of
+        //  particle, i.e. copy 0
         particleIBM
         (
             const polyMesh& mesh,
             const dictionary& dict,
-            const label& index
-        );
-
-        //- Construct from mesh, coordinates and topology
-        //  Other properties initialised as null
-        particleIBM
-        (
-            const polyMesh& mesh,
-            const dictionary& dict,
-            const label& index,
-            const barycentric& coordinates,
-            const label celli,
-            const label tetFacei,
-            const label tetPti
-        );
-
-        //- Construct from a position and a cell, searching for the rest of the
-        //  required topology. Other properties are initialised as null.
-        particleIBM
-        (
-            const polyMesh& mesh,
-            const dictionary& dict,
-            const label& index,
-            const vector& position,
-            const label celli
+            const label index
         );
 
         //- Construct from Istream
@@ -179,14 +165,23 @@ public:
         (
             const polyMesh& mesh,
             Istream& is,
-            bool readFields = true
+            bool readFields
+        );
+
+        //- Construct as a copy with new center (used with cyclic boundaries)
+        particleIBM
+        (
+            const particleIBM& p,
+            const label copy,
+            const vector& center,
+            const vector& theta,
+            const vector& v,
+            const vector& omega,
+            const scalar& age
         );
 
         //- Construct as a copy
         particleIBM(const particleIBM& p);
-
-        //- Construct as a copy
-        particleIBM(const particleIBM& p, const polyMesh& mesh);
 
 
     //- Destructor
@@ -195,8 +190,11 @@ public:
 
     // Access
 
-        //- Particle name
+        //- Particle index
         inline label index() const;
+
+        //- Particle copy number
+        inline label copy() const;
 
         //- Is any part of the particle on the mesh
         inline bool onMesh() const;
@@ -206,8 +204,6 @@ public:
 
         //- Is the center of the particle on the mesh
         inline bool centerOnMesh() const;
-
-        inline label centerIndex() const;
 
         //- Is the particle active?
         inline bool active() const;
@@ -255,23 +251,35 @@ public:
         //- Return total force acting on particle
         inline const vector& F() const;
 
-        //- Return total force acting on particle
+        //- Non-const ref to total force acting on particle
         inline vector& F();
 
         //- Return total torque acting on particle
         inline const vector& T() const;
 
-        //- Return total torque acting on particle
+        //- Non-const ref to total torque acting on particle
         inline vector& T();
+
+        //- Return collision force acting on particle
+        inline const vectorField& Fc() const;
+
+        //- Non-const ref to collision force acting on particle
+        inline vectorField& Fc();
+
+        //- Return wall collision force acting on particle
+        inline const vectorField& Fw() const;
+
+        //- Non-const ref to wall collision force acting on particle
+        inline vectorField& Fw();
+
+        //- Set the number of collisions possible
+        inline void setCollisions(const label nParticles, const label nWalls);
 
         //- Return the age of the particle
         inline const scalar& age() const;
 
         //- Return the age of the particle
         inline scalar& age();
-
-        //- Return the pointer to another copy of the particle
-        inline particleIBM* particlePtr();
 
         //- Is the force updated
         inline bool updatedForce() const;
@@ -283,6 +291,7 @@ public:
 
         //- Reset update bools
         inline void resetUpdate();
+
 
     //- Mpi data access
 
@@ -320,7 +329,15 @@ public:
         );
 
         //- Compute wall hits
-        void wallHit(const fvMesh& mesh);
+        void wallHit(const fvMesh& mesh, const scalar& dt, const label patchi);
+
+        //- Return the neighbour face if on cyclicPatch
+        label patchHit
+        (
+            const fvMesh& mesh,
+            const label patchi,
+            vector& R
+        ) const;
 
         //- Calculate and return the drag coefficient
         scalar Cd(const scalar& rhoRef, const vector& UInf) const;

@@ -1,4 +1,16 @@
 particleCloud.C
 particleCloudIO.C
 
+#collisionModels/collisionModel/IBMCollisionModel.C
+#collisionModels/collisionModel/newIBMCollisionModel.C
+#collisionModels/noCollision/noIBMCollision.C
+#collisionModels/pairCollision/IBMPairCollision.C
+#collisionModels/pairCollision/pairModel/IBMPairModel.C
+#collisionModels/pairCollision/pairModel/newIBMPairModel.C
+#collisionModels/pairCollision/pairModel/IBMPairSpringSliderDashpot.C
+#collisionModels/pairCollision/wallModel/IBMWallModel.C
+#collisionModels/pairCollision/wallModel/newIBMWallModel.C
+#collisionModels/pairCollision/wallModel/IBMWallLocalSpringSliderDashpot.C
+#collisionModels/pairCollision/wallModel/IBMWallSpringSliderDashpot.C
+
 LIB = $(FOAM_USER_LIBBIN)/libIBMparticleCloud

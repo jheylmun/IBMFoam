@@ -26,7 +26,6 @@ License
 
 Foam::autoPtr<Foam::randomDistribution> Foam::randomDistribution::New
 (
-    const label seed,
     const dictionary& dict
 )
 {
@@ -47,7 +46,7 @@ Foam::autoPtr<Foam::randomDistribution> Foam::randomDistribution::New
             << exit(FatalError);
     }
 
-    return autoPtr<randomDistribution>(cstrIter()(seed, dict));
+    return autoPtr<randomDistribution>(cstrIter()(dict));
 }
 
 

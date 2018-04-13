@@ -2,5 +2,6 @@ randomDistribution/randomDistribution.C
 randomDistribution/newRandomDistribution.C
 gaussian/gaussianDistribution.C
 exponential/exponentialDistribution.C
+gamma/gammaDistribution.C
 
 LIB = $(FOAM_USER_LIBBIN)/libdistributions

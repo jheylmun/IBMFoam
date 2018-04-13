@@ -52,18 +52,7 @@ class monodisperse
     // Private member functions
 
         //- Particle diameter
-        scalar d_;
-
-        //- Bounding box
-        vector bb1_;
-        vector bb2_;
-
-        //- points for construction of particle
-        vector p1_;
-        vector p2_;
-
-        //- List of particle positions
-        vectorList particlePos_;
+        scalarList ds_;
 
 
 public:

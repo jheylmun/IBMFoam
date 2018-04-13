@@ -1,6 +1,7 @@
 particleShapes/particleShape/particleShape.C
 particleShapes/particleShape/particleShapeNew.C
 particleShapes/cylinder/cylinder.C
+particleShapes/ellipse/ellipse.C
 particleShapes/sphere/sphere.C
 
 particleIBM/particleIBM.C

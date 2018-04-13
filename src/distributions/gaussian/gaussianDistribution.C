@@ -46,11 +46,10 @@ namespace randomDistributions
 
 Foam::randomDistributions::gaussian::gaussian
 (
-    const label seed,
     const dictionary& dict
 )
 :
-    randomDistribution(seed, dict),
+    randomDistribution(dict),
     mean_(readScalar(dict.lookup("mean"))),
     variance_(readScalar(dict.lookup("variance")))
 {}
@@ -64,9 +63,9 @@ Foam::randomDistributions::gaussian::~gaussian()
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-Foam::scalar Foam::randomDistributions::gaussian::RV()
+Foam::scalar Foam::randomDistributions::gaussian::RV(Random& rv)
 {
-    return rand_.GaussNormal()*variance_ + mean_;
+    return rv.GaussNormal()*variance_ + mean_;
 }
 
 Foam::scalar Foam::randomDistributions::gaussian::moment(const label i) const

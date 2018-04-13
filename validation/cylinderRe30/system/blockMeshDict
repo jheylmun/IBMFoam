@@ -21,7 +21,7 @@ ptsPerD     15;
 
 nDvert      5.0;
 nDup        5.0;
-nDdown      1.0;
+nDdown      15.0;
 
 xCenter     0.0;
 xMin        #calc "$xCenter-$D*$nDup";
@@ -116,7 +116,7 @@ boundary
     }
     freestream1
     {
-        type patch;
+        type cyclic;
         neighbourPatch freestream2;
         faces
         (
@@ -126,7 +126,7 @@ boundary
     }
     freestream2
     {
-        type patch;
+        type cyclic;
         neighbourPatch freestream1;
         faces
         (

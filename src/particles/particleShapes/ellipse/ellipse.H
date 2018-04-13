@@ -22,18 +22,18 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::particle
+    Foam::ellipse
 
 Description
-    abstract class for a spherical particle
+    abstract class for a ellipsoid particle
 
 SourceFiles
-    particle.C
+    ellipse.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef cylinder_H
-#define cylinder_H
+#ifndef ellipse_H
+#define ellipse_H
 
 #include "particleShape.H"
 
@@ -45,48 +45,53 @@ namespace Foam
 namespace particleShapes
 {
 
-class cylinder
+class ellipse
 :
     public particleShape
 {
     // Private member functions
 
-        //- Particle diameter
-        scalar d_;
+        //- Major diameter (x)
+        scalar a_;
 
-        //- Cylinder length
+        //- Minor diameter
+        scalar b_;
+
+        //- Length of ellipsoid
         scalar l_;
 
         //- Calculate the surface areas
         virtual void calcSf();
 
+        //- Rotate the mesh
+        virtual tmp<vectorField> rotate();
+
 
 public:
 
     //- Runtime type information
-    TypeName("cylinder");
+    TypeName("ellipse");
 
     // Constructor
 
         // Construct particle from dictionary entry
-        cylinder
+        ellipse
         (
             const polyMesh& mesh,
             const dictionary& dict,
             const vector& center
         );
 
-        // Construct as a copy
-        cylinder
+        //- Copy constructor
+        ellipse
         (
             const particleShape& shape,
             const vector& center,
             const vector& theta
         );
 
-
     //- Destructor
-    virtual ~cylinder();
+    virtual ~ellipse();
 
 
     // Member functions
@@ -108,11 +113,8 @@ public:
         //- Particle volume
         virtual scalar V() const;
 
-        //- Return the radius give a position of another particle
-        virtual scalar r(const vector& x2) const
-        {
-            return d_/2.0;
-        }
+        //- Return the radius give a position
+        virtual scalar r(const vector& x2) const;
 
 
     // Ostream Operator

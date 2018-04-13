@@ -22,18 +22,18 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::gaussian
+    Foam::gamma
 
 Description
-    Random gaussian distribution
+    Random gamma distribution
 
 SourceFiles
-    gaussianDistribution.C
+    gammaDistribution.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef gaussianDistribution_H
-#define gaussianDistribution_H
+#ifndef gammaDistribution_H
+#define gammaDistribution_H
 
 #include "randomDistribution.H"
 
@@ -45,34 +45,31 @@ namespace Foam
 namespace randomDistributions
 {
 
-class gaussian
+class gamma
 :
     public randomDistribution
 {
 
-    //- Mean value
-    scalar mean_;
-
-    //- Variance
-    scalar variance_;
+    //- Scalae parameter
+    scalar alpha_;
 
 
 public:
 
     //- Runtime type information
-    TypeName("gaussian");
+    TypeName("gamma");
 
     // Constructor
-    gaussian(const label seed, const dictionary& dict);
+    gamma(const dictionary& dict);
 
     //- Destructor
-    virtual ~gaussian();
+    virtual ~gamma();
 
 
     // Public functions
 
-        //- Return a gaussian random variable
-        virtual scalar RV();
+        //- Return a gamma random variable
+        virtual scalar RV(Random& rv);
 
         //- Return the ith statistical moment
         virtual scalar moment(const label i) const;

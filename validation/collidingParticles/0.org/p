@@ -25,26 +25,19 @@ boundaryField
     {
         type            zeroGradient;
     }
-
     outlet
     {
-        type            fixedValue;
+        type            zeroGradient;
         value           uniform 0;
     }
-
-    defaultFaces
-    {
-        type            empty;
-    }
-
     freestream1
     {
-        type            zeroGradient;
+        type            cyclic;
         value           uniform 0;
     }
     freestream2
     {
-        type            zeroGradient;
+        type            cyclic;
         value           uniform 0;
     }
     freestream3

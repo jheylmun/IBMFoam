@@ -21,7 +21,7 @@ ptsPerD     30;
 
 nDvert      2.0;
 nDup        2.0;
-nDdown      4.0;
+nDdown      2.0;
 
 xCenter     0.0;
 xMin        #calc "$xCenter-$D*$nDup";
@@ -98,7 +98,7 @@ boundary
 (
     inlet
     {
-        type patch;
+        type wall;
         faces
         (
             (7 0 9 16)
@@ -107,7 +107,7 @@ boundary
     }
     outlet
     {
-        type patch;
+        type wall;
         faces
         (
             (2 3 12 11)
@@ -116,7 +116,7 @@ boundary
     }
     freestream1
     {
-        type wall;
+        type cyclic;
         neighbourPatch freestream2;
         faces
         (
@@ -126,7 +126,7 @@ boundary
     }
     freestream2
     {
-        type wall;
+        type cyclic;
         neighbourPatch freestream1;
         faces
         (

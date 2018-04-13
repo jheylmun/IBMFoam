@@ -53,4 +53,31 @@ Foam::autoPtr<Foam::particleShape> Foam::particleShape::New
 }
 
 
+Foam::autoPtr<Foam::particleShape> Foam::particleShape::New
+(
+    const particleShape& shape,
+    const vector& center,
+    const vector& theta
+)
+{
+    const word modelType(shape.type());
+
+    copyConstructorTable::iterator cstrIter =
+        copyConstructorTablePtr_->find(modelType);
+
+    if (cstrIter == copyConstructorTablePtr_->end())
+    {
+        FatalErrorInFunction
+            << "Unknown particle shape type "
+            << modelType << nl << nl
+            << "Valid particleShapes are : " << endl
+            << copyConstructorTablePtr_->sortedToc()
+            << exit(FatalError);
+    }
+
+    return autoPtr<particleShape>
+        (cstrIter()(shape, center, theta));
+}
+
+
 // ************************************************************************* //

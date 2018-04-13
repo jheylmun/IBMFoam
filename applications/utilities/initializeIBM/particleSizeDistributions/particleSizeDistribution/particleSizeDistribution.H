@@ -46,6 +46,9 @@ SourceFiles
 #include "OFstream.H"
 #include "Random.H"
 #include "constants.H"
+#include "boundBox.H"
+#include "particleShape.H"
+#include "randomDistribution.H"
 
 
 namespace Foam
@@ -78,23 +81,23 @@ protected:
     //- Initialization dictionary
     const dictionary& dict_;
 
-    //- Number of particles
-    label nParticles_;
+    //- List of particle shapes
+    PtrList<particleShape> pShapes_;
 
-    //- Volume fraction occupied by particles
-    scalar volumeFraction_;
+    //- Types of particles
+    wordList pTypes_;
 
-    //- minimum distance between  particles
-    scalar deltaR_;
+    //- Total number of particles
+    label nTotParticles_;
 
-    //- Number of points per diameter
-    label nTheta_;
+    //- Number of particles in each type
+    labelList nParticles_;
 
-    //- Number of k points
-    label nk_;
+    //- Bounding box
+    boundBox bb_;
 
-    //- Particle shell seperation
-    scalar delta_;
+    //- List of particle densities
+    scalarField rhos_;
 
 
 public:

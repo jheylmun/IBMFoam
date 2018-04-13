@@ -27,15 +27,14 @@ Foam::label Foam::particleIBM::index() const
     return index_;
 }
 
+Foam::label Foam::particleIBM::copy() const
+{
+    return copy_;
+}
 
 bool Foam::particleIBM::onMesh() const
 {
     return (shape_->onMesh_ != particleShape::locationType::OFF_MESH);
-}
-
-Foam::label Foam::particleIBM::centerIndex() const
-{
-    return shape_->centerIndex_;
 }
 
 bool Foam::particleIBM::centerOnMesh() const
@@ -159,6 +158,39 @@ Foam::vector& Foam::particleIBM::T()
 }
 
 
+const Foam::vectorField& Foam::particleIBM::Fc() const
+{
+    return collisionForces_;
+}
+
+
+Foam::vectorField& Foam::particleIBM::Fc()
+{
+    return collisionForces_;
+}
+
+
+const Foam::vectorField& Foam::particleIBM::Fw() const
+{
+    return wallForces_;
+}
+
+
+Foam::vectorField& Foam::particleIBM::Fw()
+{
+    return wallForces_;
+}
+
+void Foam::particleIBM::setCollisions(const label nParticles, const label nWalls)
+{
+    collisionForces_.resize(nParticles);
+    collisionForces_ = Zero;
+
+    wallForces_.resize(nWalls);
+    wallForces_ = Zero;
+}
+
+
 const Foam::scalar& Foam::particleIBM::age() const
 {
     return age_;
@@ -167,11 +199,6 @@ const Foam::scalar& Foam::particleIBM::age() const
 Foam::scalar& Foam::particleIBM::age()
 {
     return age_;
-}
-
-Foam::particleIBM* Foam::particleIBM::particlePtr()
-{
-    return particlePtr_;
 }
 
 Foam::label Foam::particleIBM::centerProc() const

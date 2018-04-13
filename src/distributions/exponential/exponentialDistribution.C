@@ -46,11 +46,10 @@ namespace randomDistributions
 
 Foam::randomDistributions::exponential::exponential
 (
-    const label seed,
     const dictionary& dict
 )
 :
-    randomDistribution(seed, dict),
+    randomDistribution(dict),
     mean_(readScalar(dict.lookup("mean")))
 {}
 
@@ -63,9 +62,9 @@ Foam::randomDistributions::exponential::~exponential()
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-Foam::scalar Foam::randomDistributions::exponential::RV()
+Foam::scalar Foam::randomDistributions::exponential::RV(Random& rv)
 {
-    return -log(rand_.scalar01())/mean_;
+    return -log(rv.scalar01())/mean_;
 }
 
 Foam::scalar Foam::randomDistributions::exponential::moment(const label i) const

@@ -22,7 +22,7 @@ solvers
         solver          GAMG;
         smoother        DIC;
         preconditioner  DIC;
-        tolerance       1e-10;
+        tolerance       1e-8;
         relTol          0.1;
     }
     pFinal
@@ -35,7 +35,7 @@ solvers
     {
         solver          PBiCG;
         preconditioner  DILU
-        tolerance       1e-8;
+        tolerance       1e-6;
         relTol          0.1;
     }
 
@@ -49,7 +49,7 @@ solvers
 PIMPLE
 {
     nNonOrthogonalCorrectors 0;
-    nOuterCorrectors         1;
+    nOuterCorrectors         3;
     nCorrectors     2;
     pRefCell        0;
     pRefValue       0;
@@ -59,7 +59,7 @@ PIMPLE
     {
         p
         {
-            tolerance   1e-3;
+            tolerance   1e-4;
             relTol      0;
         }
     }

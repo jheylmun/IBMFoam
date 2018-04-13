@@ -62,9 +62,6 @@ protected:
     //- Dictionary
     const dictionary& dict_;
 
-    //- Random variable (uniform 01 and normal gaussian)
-    Random rand_;
-
     //- Minimum value
     scalar minVal_;
 
@@ -84,22 +81,20 @@ public:
         randomDistribution,
         dictionary,
         (
-            const label seed,
             const dictionary& dict
         ),
-        (seed, dict)
+        (dict)
     );
 
     // Selector
     static autoPtr<randomDistribution> New
     (
-        const label seed,
         const dictionary& dict
     );
 
 
     // Constructor
-    randomDistribution(const label seed, const dictionary& dict);
+    randomDistribution(const dictionary& dict);
 
 
     //- Destructor
@@ -109,7 +104,7 @@ public:
     // Public functions
 
         //- Return a random variable based of the given distribution
-        virtual scalar RV() = 0;
+        virtual scalar RV(Random& rv) = 0;
 
         //- Return the ith statistical moment
         virtual scalar moment(const label i) const = 0;

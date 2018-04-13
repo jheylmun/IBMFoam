@@ -17,6 +17,7 @@ FoamFile
 
 nParticles	1;
 moving false;
+rotating false;
 e 1.0;
 
 flow

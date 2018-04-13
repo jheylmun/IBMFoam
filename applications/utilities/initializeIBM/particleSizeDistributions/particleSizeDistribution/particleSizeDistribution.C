@@ -51,36 +51,16 @@ Foam::IBM::particleSizeDistribution::particleSizeDistribution
         mesh.time().constant(),
         mesh,
         IOobject::NO_READ,
-        IOobject::AUTO_WRITE
+        IOobject::NO_WRITE
     ),
     mesh_(mesh),
-    rand_(mesh_.time().elapsedClockTime()),
+    rand_(clock::getTime()),
     dict_(dict),
-    nParticles_(dict.subDict("PSD").lookupOrDefault<label>("nParticles",1)),
-    volumeFraction_
-    (
-        dict.subDict("PSD").lookupOrDefault<scalar>
-        (
-            "volumeFraction",
-            0
-        )
-    ),
-    deltaR_(readScalar(dict.subDict("PSD").lookup("deltaR"))),
-    nTheta_
-    (
-        readLabel(dict.subDict("baseParticle").lookup("nTheta"))
-    ),
-    nk_(dict.subDict("baseParticle").lookupOrDefault<label>("nk",3)),
-    delta_(readScalar(dict.subDict("baseParticle").lookup("delta")))
-{
-    if (nParticles_ == -1 && volumeFraction_ == -1.0)
-    {
-        FatalErrorInFunction
-            << "Either the number of particles or the volume fraction " << nl
-            << " must be specified to initialize a field of IBM particles."
-            << nl << exit(FatalError);
-    }
-}
+    pTypes_(dict.lookup("pTypes")),
+    nTotParticles_(0),
+    nParticles_(pTypes_.size(), 0),
+    bb_(mesh.points())
+{}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -95,13 +75,13 @@ bool Foam::IBM::particleSizeDistribution::write()
 {
     OFstream os
     (
-        mesh_.time().constant()/"initialStates"
+        mesh_.time().constant()/"IBMProperties"
     );
-    IOdictionary initStateHeader
+    IOdictionary IBMPropertiesHeader
     (
         IOobject
         (
-            "initialStates",
+            "IBMProperties",
             mesh_.time().constant(),
             mesh_,
             IOobject::NO_READ,
@@ -109,9 +89,21 @@ bool Foam::IBM::particleSizeDistribution::write()
         )
     );
 
-    initStateHeader.writeHeader(os);
+    IBMPropertiesHeader.writeHeader(os);
 
-    os  << "nParticles" << token::TAB << nParticles_
+    os  << "nParticles" << token::TAB << nTotParticles_
+        << token::END_STATEMENT << nl
+
+        << "moving" << token::TAB << dict_.lookupType<Switch>("moving")
+        << token::END_STATEMENT << nl
+
+        << "rotating" << token::TAB << dict_.lookupType<Switch>("rotating")
+        << token::END_STATEMENT << nl
+
+        << "coupled" << token::TAB << dict_.lookupType<Switch>("coupled")
+        << token::END_STATEMENT << nl
+
+        << "e" << token::TAB << dict_.lookupType<scalar>("e")
         << token::END_STATEMENT << endl;
 
     dictionary flowDict(dict_.subDict("flow"));

@@ -1,10 +1,13 @@
 EXE_INC = \
     -I$(LIB_SRC)/OpenFOAM/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
-    -DFULLDEBUG -g -O0
+    -I../../../../src/particles/lnInclude \
+    -I../../../../src/distributions/lnInclude
 
 EXE_LIBS = \
     -L$(FOAM_USER_LIBBIN) \
     -lOpenFOAM \
-    -lfiniteVolume
+    -lfiniteVolume \
+    -lparticleIBM \
+    -ldistributions
 

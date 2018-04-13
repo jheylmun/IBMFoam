@@ -49,9 +49,9 @@ const Foam::vectorList& Foam::particleShape::mesh() const
     return baseMesh_;
 }
 
-const Foam::vectorList& Foam::particleShape::Sf() const
+Foam::tmp<Foam::vectorField> Foam::particleShape::Sf() const
 {
-    return Sf_;
+    return rotationMatrix_ & Sf_;
 }
 
 const Foam::scalar& Foam::particleShape::delta() const

@@ -38,6 +38,12 @@ namespace particleShapes
         sphere,
         dictionary
     );
+    addToRunTimeSelectionTable
+    (
+        particleShape,
+        sphere,
+        copy
+    );
 }
 }
 
@@ -56,7 +62,7 @@ Foam::particleShapes::sphere::sphere
 {
     this->momentOfInertia_ = 2.0/5.0*sqr(d_/2.0);
 
-    if (!dict_.found("nk_"))
+    if (!dict.found("nk_"))
     {
         nk_ = nTheta_/2;
     }
@@ -67,6 +73,21 @@ Foam::particleShapes::sphere::sphere
             << "Sphere particle shape on valid for 3D meshes"
             << exit(FatalError);
     }
+    discretize();
+    updateCellLists();
+    calcSf();
+}
+
+Foam::particleShapes::sphere::sphere
+(
+    const particleShape& shape,
+    const vector& center,
+    const vector& theta
+)
+:
+    particleShape(shape, center, theta),
+    d_(refCast<const sphere>(shape).d_)
+{
     discretize();
     updateCellLists();
     calcSf();
@@ -211,7 +232,7 @@ Foam::scalar Foam::particleShapes::sphere::d() const
     return d_;
 }
 
-Foam::scalar Foam::particleShapes::sphere::A() const
+Foam::scalar Foam::particleShapes::sphere::A(const vector& pt) const
 {
     return Foam::constant::mathematical::pi*sqr(d_/2.0);
 }

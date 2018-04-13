@@ -36,15 +36,11 @@ boundaryField
 
     freestream1
     {
-        type            inletOutlet;
-        phi             phi;
-        inletValue      uniform (0 0 0);
+        type            cyclic;
     }
     freestream2
     {
-        type            inletOutlet;
-        phi             phi;
-        inletValue      uniform (0 0 0);
+        type            cyclic;
     }
     freestream3
     {

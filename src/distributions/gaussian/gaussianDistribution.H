@@ -63,7 +63,7 @@ public:
     TypeName("gaussian");
 
     // Constructor
-    gaussian(const label seed, const dictionary& dict);
+    gaussian(const dictionary& dict);
 
     //- Destructor
     virtual ~gaussian();
@@ -72,7 +72,7 @@ public:
     // Public functions
 
         //- Return a gaussian random variable
-        virtual scalar RV();
+        virtual scalar RV(Random& rv);
 
         //- Return the ith statistical moment
         virtual scalar moment(const label i) const;

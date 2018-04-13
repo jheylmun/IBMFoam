@@ -15,7 +15,8 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-type exponential;
+type gamma;
+alpha 2.0;
 mean 1.0;
 variance 5.0;
 

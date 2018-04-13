@@ -42,6 +42,19 @@ autoPtr<incompressible::turbulenceModel> turbulence
     incompressible::turbulenceModel::New(U, phi, laminarTransport)
 );
 
-particleCloud particles(mesh);
+IOdictionary IBMProperties
+(
+    IOobject
+    (
+        "IBMProperties",
+        runTime.constant(),
+        mesh,
+        IOobject::MUST_READ,
+        IOobject::NO_WRITE,
+        true
+    )
+);
+
+particleCloud particles(mesh, IBMProperties);
 
 #include "createMRF.H"

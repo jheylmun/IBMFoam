@@ -17,32 +17,32 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (0.3 0 0);
+internalField   uniform (0 0 0);
 freestreamValue uniform (0.3 0 0);
 boundaryField
 {
     inlet
     {
-        type            fixedValue;
+        type            noSlip;
         value           $freestreamValue;
     }
 
     outlet
     {
-        type            inletOutlet;
+        type            noSlip;
         phi             phi;
         inletValue      uniform (0 0 0);
     }
 
     freestream1
     {
-        type            noSlip;
+        type            cyclic;
         phi             phi;
         inletValue      uniform (0 0 0);
     }
     freestream2
     {
-        type            noSlip;
+        type            cyclic;
         phi             phi;
         inletValue      uniform (0 0 0);
     }

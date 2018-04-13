@@ -37,12 +37,10 @@ namespace Foam
 
 Foam::randomDistribution::randomDistribution
 (
-    const label seed,
     const dictionary& dict
 )
 :
     dict_(dict),
-    rand_(seed),
     minVal_(dict.lookupOrDefault("minVal", -HUGE)),
     maxVal_(dict.lookupOrDefault("maxVal", HUGE))
 {}

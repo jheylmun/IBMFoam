@@ -27,6 +27,7 @@ namespace Foam
 {
     defineTypeNameAndDebug(particleShape, 0);
     defineRunTimeSelectionTable(particleShape, dictionary);
+    defineRunTimeSelectionTable(particleShape, copy);
 }
 
 
@@ -34,8 +35,6 @@ namespace Foam
 
 void Foam::particleShape::setWeights()
 {
-    wFromLocal_.clear();
-
     // Total number of global mesh faces
     label nFaces = mesh_.nInternalFaces();
 
@@ -57,7 +56,7 @@ void Foam::particleShape::setWeights()
             label wi = 0;
             forAll(cellFaces, facei)
             {
-                if (cellFaces[facei] > nFaces) continue;
+                if (cellFaces[facei] >= nFaces) continue;
 
                 faces[wi] = cellFaces[facei];
 
@@ -212,6 +211,46 @@ void Foam::particleShape::setProcs()
 }
 
 
+void Foam::particleShape::setRotationMatrix()
+{
+    rotationMatrix_ = tensor::I;
+
+    if (mag(theta_.x()) > SMALL)
+    {
+        scalar t1 = theta_.x();
+        rotationMatrix_ &=
+            tensor
+            (
+                1.0, 0.0, 0.0,
+                0.0, cos(t1), -sin(t1),
+                0.0, sin(t1), cos(t1)
+            );
+    }
+    if (mag(theta_.y()) > SMALL)
+    {
+        scalar t2 = theta_.y();
+        rotationMatrix_ &=
+            tensor
+            (
+                cos(t2), 0.0, sin(t2),
+                0.0, 1.0, 0.0,
+                -sin(t2), 0.0, cos(t2)
+            );
+    }
+    if (mag(theta_.z()) > SMALL)
+    {
+        scalar t3 = theta_.z();
+        rotationMatrix_ &=
+            tensor
+            (
+                cos(t3), -sin(t3), 0.0,
+                sin(t3), cos(t3), 0.0,
+                0.0, 0.0, 1.0
+            );
+    }
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::particleShape::particleShape
@@ -222,18 +261,44 @@ Foam::particleShape::particleShape
 )
 :
     mesh_(mesh),
-    dict_(dict),
     onMesh_(ON_MESH),
     center_(center),
     momentOfInertia_(HUGE),
     nTheta_(readLabel(dict.lookup("nTheta"))),
     nk_(dict.lookupOrDefault<label>("nk", 1)),
     N_(nRadial_*nTheta_*nk_),
-    theta_(dict.lookupOrDefault<vector>("nk", Zero)),
+    theta_(dict.lookupOrDefault<vector>("theta", Zero)),
     delta_(readScalar(dict.lookup("delta"))),
     centeredMesh_(N_, Zero),
     baseMesh_(N_,Zero),
     Sf_(nTheta_*nk_,Zero),
+    neighbourPoints_(N_),
+    wToLocal_(N_),
+    WToLocal_(N_),
+    facesToLocal_(N_),
+    neiProcs_(Pstream::nProcs(), false)
+{}
+
+
+Foam::particleShape::particleShape
+(
+    const particleShape& shape,
+    const vector& center,
+    const vector& theta
+)
+:
+    mesh_(shape.mesh_),
+    onMesh_(shape.onMesh_),
+    center_(center),
+    momentOfInertia_(shape.momentOfInertia_),
+    nTheta_(shape.nTheta_),
+    nk_(shape.nk_),
+    N_(shape.N_),
+    theta_(theta),
+    delta_(shape.delta_),
+    centeredMesh_(N_, Zero),
+    baseMesh_(N_, Zero),
+    Sf_(nTheta_*nk_, Zero),
     neighbourPoints_(N_),
     wToLocal_(N_),
     WToLocal_(N_),
@@ -252,10 +317,13 @@ Foam::particleShape::~particleShape()
 void Foam::particleShape::moveMesh(const vector& center)
 {
     center_ = center;
+    setRotationMatrix();
+
+    baseMesh_ = rotate();
 
     forAll(baseMesh_, celli)
     {
-        baseMesh_[celli] = centeredMesh_[celli] + center_;
+        baseMesh_[celli] += center_;
     }
 }
 

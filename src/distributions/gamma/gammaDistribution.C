@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------*\
+/* ---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
@@ -19,7 +19,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "gaussianDistribution.H"
+#include "gammaDistribution.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
@@ -30,12 +30,12 @@ namespace Foam
 {
 namespace randomDistributions
 {
-    defineTypeNameAndDebug(gaussian, 0);
+    defineTypeNameAndDebug(gamma, 0);
 
     addToRunTimeSelectionTable
     (
         randomDistribution,
-        gaussian,
+        gamma,
         dictionary
     );
 }
@@ -44,32 +44,35 @@ namespace randomDistributions
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::randomDistributions::gaussian::gaussian
+Foam::randomDistributions::gamma::gamma
 (
-    const label seed,
     const dictionary& dict
 )
 :
-    randomDistribution(seed, dict),
-    mean_(readScalar(dict.lookup("mean"))),
-    variance_(readScalar(dict.lookup("variance")))
+    randomDistribution(dict),
+    alpha_(readScalar(dict.lookup("alpha")))
 {}
 
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-Foam::randomDistributions::gaussian::~gaussian()
+Foam::randomDistributions::gamma::~gamma()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-Foam::scalar Foam::randomDistributions::gaussian::RV()
+Foam::scalar Foam::randomDistributions::gamma::RV(Random& rv)
 {
-    return rand_.scalar01()*variance_ + mean_;
+    return invIncGamma(alpha_, rv.scalar01());
 }
 
-Foam::scalar Foam::randomDistributions::gaussian::moment(const label i) const
+Foam::scalar Foam::randomDistributions::gamma::moment(const label i) const
+{
+    return 1.0;
+}
+
+Foam::scalar Foam::randomDistributions::gamma::moment(const scalar i) const
 {
     return 1.0;
 }

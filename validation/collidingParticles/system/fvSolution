@@ -33,10 +33,10 @@ solvers
 
     U
     {
-        solver          PBiCG;
+        solver          PBiCGStab;
         preconditioner  DILU
-        tolerance       1e-8;
-        relTol          0.1;
+        tolerance       1e-5;
+        relTol          0.01;
     }
 
     UFinal

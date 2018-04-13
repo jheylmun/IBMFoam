@@ -22,6 +22,7 @@ License
 #include "particleIBM.H"
 #include "particleShape.H"
 #include "wallFvPatch.H"
+#include "randomDistribution.H"
 
 namespace Foam
 {
@@ -63,7 +64,7 @@ void Foam::particleIBM::interpolateFToMesh
                 ws[celli][pti]/W[celli]
                *(
                     (
-                        v(shape_->centeredMesh_[Os[celli][pti]])
+                        v(shape_->baseMesh_[Os[celli][pti]])
                       - U[Os[celli][pti]]
                       - Uold[Is[celli][pti]]
                     )/dT
@@ -77,7 +78,7 @@ void Foam::particleIBM::interpolateFToMesh
                 ws[celli][pti]/W[celli]
                *(
                     (
-                        v(shape_->centeredMesh_[Is[celli][pti]])
+                        v(shape_->baseMesh_[Is[celli][pti]])
                       - Uold[Is[celli][pti]]
                     )/dT
                   + S[Is[celli][pti]]
@@ -90,7 +91,7 @@ void Foam::particleIBM::interpolateFToMesh
 
 Foam::vector Foam::particleIBM::v(const vector& pt) const
 {
-    return -(pt - shape_->center_)^omega_;
+    return (-(pt - shape_->center_)^omega_ ) + v_;
 }
 
 
@@ -100,7 +101,7 @@ Foam::particleIBM::particleIBM
 (
     const polyMesh& mesh,
     const dictionary& dict,
-    const label& index
+    const label index
 )
 :
     particle
@@ -120,100 +121,70 @@ Foam::particleIBM::particleIBM
         )
     ),
     mesh_(mesh),
-    dict_(dict),
     index_(index),
+    copy_(0),
     active_(true),
-    shape_(particleShape::New(mesh_, dict, vector(dict.lookup("position")))),
+    shape_
+    (
+        particleShape::New
+        (
+            mesh,
+            dict,
+            vector(dict.lookup("position"))
+        )
+    ),
     v_(dict.template lookupOrDefault<vector>("v", Zero)),
     omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
     rho_(readScalar(dict.lookup("rho"))),
     age_(0.0),
-    integratedForce_(Zero)
-{}
-
-
-Foam::particleIBM::particleIBM
-(
-    const polyMesh& mesh,
-    const dictionary& dict,
-    const label& index,
-    const barycentric& coordinates,
-    const label celli,
-    const label tetFacei,
-    const label tetPti
-)
-:
-    particle(mesh, coordinates, celli, tetFacei, tetPti),
-    mesh_(mesh),
-    dict_(dict),
-    index_(index),
-    active_(true),
-    shape_(particleShape::New(mesh_, dict, vector(dict.lookup("position")))),
-    v_(dict.template lookupOrDefault<vector>("v", Zero)),
-    omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
-    rho_(readScalar(dict.lookup("rho"))),
-    age_(0.0),
-    integratedForce_(Zero)
-{}
-
-
-Foam::particleIBM::particleIBM
-(
-    const polyMesh& mesh,
-    const dictionary& dict,
-    const label& index,
-    const vector& position,
-    const label celli
-)
-:
-    particle(mesh, position, celli),
-    mesh_(mesh),
-    dict_(dict),
-    index_(index),
-    active_(true),
-    shape_(particleShape::New(mesh_, dict_, vector(dict.lookup("position")))),
-    v_(dict.template lookupOrDefault<vector>("v", Zero)),
-    omega_(dict.template lookupOrDefault<vector>("omega", Zero)),
-    rho_(readScalar(dict.lookup("rho"))),
-    age_(0.0),
-    integratedForce_(Zero)
+    integratedForce_(Zero),
+    integratedForceOld_(Zero),
+    integratedTorque_(Zero),
+    integratedTorqueOld_(Zero)
 {}
 
 
 Foam::particleIBM::particleIBM
 (
     const particleIBM& p,
-    const polyMesh& mesh
+    const label copy,
+    const vector& center,
+    const vector& theta,
+    const vector& v,
+    const vector& omega,
+    const scalar& age
 )
 :
     particle
     (
-        (p.mesh_.findCell(p.position()) != -1)
+        (p.mesh_.findCell(center) != -1)
       ? static_cast<const particle&>(p)
-      : particle
+      : Foam::particle
         (
             p.mesh_,
-            p.mesh_.cellCentres()[p.mesh_.findNearestCell(p.position())],
-            p.mesh_.findNearestCell(p.position())
+            p.mesh_.cellCentres()[p.mesh_.findNearestCell(center)],
+            p.mesh_.findNearestCell(center)
         )
     ),
-    mesh_(mesh),
-    dict_(p.dict_),
+    mesh_(p.mesh_),
     index_(p.index_),
-    active_(p.active_),
-    shape_(particleShape::New(mesh_, dict_, vector(dict_.lookup("position")))),
-    v_(p.v_),
-    omega_(p.omega_),
+    copy_(copy),
+    active_(false),
+    shape_(particleShape::New(p.shape_(), center, theta)),
+    v_(v),
+    omega_(omega),
     rho_(p.rho_),
-    age_(p.age_),
-    integratedForce_(p.integratedForce_)
+    age_(age),
+    integratedForce_(Zero),
+    integratedForceOld_(Zero),
+    integratedTorque_(Zero),
+    integratedTorqueOld_(Zero),
+    collisionForces_(p.collisionForces_.size(), Zero),
+    wallForces_(p.wallForces_.size(), Zero)
 {}
 
 
-Foam::particleIBM::particleIBM
-(
-    const particleIBM& p
-)
+Foam::particleIBM::particleIBM(const particleIBM& p)
 :
     particle
     (
@@ -227,34 +198,27 @@ Foam::particleIBM::particleIBM
         )
     ),
     mesh_(p.mesh_),
-    dict_(p.dict_),
     index_(p.index_),
-    active_(p.active_),
-    shape_(particleShape::New(mesh_, dict_, vector(dict_.lookup("position")))),
+    copy_(p.copy_),
+    active_(false),
+    shape_(particleShape::New(p.shape_(), p.center(), p.theta())),
     v_(p.v_),
     omega_(p.omega_),
     rho_(p.rho_),
     age_(p.age_),
-    integratedForce_(p.integratedForce_)
-{
-    if (shape_->centerOnMesh())
-    {
-        active_ = 1;
-    }
-    else
-    {
-        active_ = 0;
-    }
-}
+    integratedForce_(p.integratedForce_),
+    integratedForceOld_(p.integratedForceOld_),
+    integratedTorque_(p.integratedTorque_),
+    integratedTorqueOld_(p.integratedTorqueOld_),
+    collisionForces_(p.collisionForces_.size(), Zero),
+    wallForces_(p.wallForces_.size(), Zero)
+{}
 
+
+// * * * * * * * * * * * * * * * * Destructor * * * * * * * * * * * * * * * *//
 
 Foam::particleIBM::~particleIBM()
-{
-    if (particlePtr_)
-    {
-        delete particlePtr_;
-    }
-}
+{}
 
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
@@ -266,8 +230,17 @@ void Foam::particleIBM::solve
     const bool rotation
 )
 {
+    if (!onMesh())
+    {
+        return;
+    }
+
     if (moving)
     {
+        vector Fc = sum(collisionForces_);
+        vector Fw = sum(wallForces_);
+        integratedForce_ += Fc + Fw;
+
         v_ += dt*integratedForce_/mass();
         vector dx = dt*v_;
         shape_->center_ += dx;
@@ -275,41 +248,77 @@ void Foam::particleIBM::solve
 
     if (rotation)
     {
-        vector dTheta = omega_*dt;
-        shape_->theta() += dTheta;
         omega_ += dt*integratedTorque_/(mass()*shape_->I());
+        shape_->theta() += omega_*dt;
     }
+    integratedForce_ = integratedForceOld_;
+    integratedTorque_ = integratedTorqueOld_;
+    collisionForces_ = Zero;
+    wallForces_ = Zero;
 }
 
 
 void Foam::particleIBM::wallHit
 (
-    const fvMesh& mesh
+    const fvMesh& mesh,
+    const scalar& dt,
+    const label patchi
 )
 {
-    forAll(mesh.boundary(), patchi)
+    if (!onMesh())
     {
-        if (isA<wallFvPatch>(mesh.boundary()[patchi]))
+        return;
+    }
+    forAll(mesh.boundary()[patchi], facei)
+    {
+        const vector& faceCentre =
+            mesh.Cf().boundaryField()[patchi][facei];
+        vector norm =
+            mesh.Sf().boundaryField()[patchi][facei]
+            /mesh.magSf().boundaryField()[patchi][facei];
+
+        vector R = center() - faceCentre;
+        scalar magR = mag(R);
+        vector normR = R/magR;
+        if (magR <= r(faceCentre) && (v_ & norm) > 0)
         {
-            forAll(mesh.boundary()[patchi], facei)
-            {
-                const vector& faceCentre =
-                    mesh.Cf().boundaryField()[patchi][facei];
-                vector norm =
-                    mesh.Sf().boundaryField()[patchi][facei]
-                   /mesh.magSf().boundaryField()[patchi][facei];
+            vector vNorm = norm*(norm & v_);
+            wallForces_[patchi] = -2.0*mass()*(vNorm & normR)*normR/dt;
+//                     integratedTorque_ += normalForce_ ^ R;
 
-                scalar dist = mag(center() - faceCentre);
-                if (dist <= r(faceCentre) && (v_ & norm) > 0)
-                {
-                    vector normv = norm*(norm & v_);
-                    v_ -= 2.0*normv;
-
-                    continue;
-                }
-            }
+            // Only calculate one hit per patch
+            return;
         }
     }
+}
+
+Foam::label Foam::particleIBM::patchHit
+(
+    const fvMesh& mesh,
+    const label patchi,
+    vector& R
+) const
+{
+    if (!onMesh())
+    {
+        return -1;
+    }
+
+    forAll(mesh.boundaryMesh()[patchi], facei)
+    {
+        const vector& faceCentre =
+            mesh.Cf().boundaryField()[patchi][facei];
+        vector norm =
+            mesh.Sf().boundaryField()[patchi][facei]
+            /mesh.magSf().boundaryField()[patchi][facei];
+
+        R = center() - faceCentre;
+        if (mag(R) <= r(faceCentre) && (v_ & norm) > 0)
+        {
+            return facei;
+        }
+    }
+    return -1;
 }
 
 
@@ -345,32 +354,40 @@ void Foam::particleIBM::integrateSurfaceStress
 
     interpolateFromMesh(tauf,interpolatedTau);
     interpolateFromMesh(pf,interpolatedP);
+    tmp<vectorField> tmpSf(shape_->Sf());
+    const vectorField& Sf = tmpSf();
 
-    integratedForce_ = Zero;
-    integratedTorque_ = Zero;
+    integratedForceOld_ = Zero;
+    integratedTorqueOld_ = Zero;
 
     for (label i = 0; i < shape_->nTheta(); i++)
     {
         for (label k = 0; k < shape_->nk(); k++)
         {
-            const vector& pt = shape_->centeredMesh_[shape_->index2(i,k)];
-            const vector& Sf = shape_->Sf_[shape_->index2(i,k)];
-            scalar magSf = mag(Sf);
-            vector norm = Sf/magSf;
-            const symmTensor& tau = interpolatedTau[shape_->index(1,i,k)];
-            vector F = tau & norm;
-            vector nStress = (F & norm)*norm;
-            vector tStress = F - nStress;
+            vector R =
+                shape_->baseMesh_[shape_->index2(i,k)] - shape_->center_;
 
-            integratedForce_ +=
+            const vector& Sfi = Sf[shape_->index2(i,k)];
+            scalar magSf = mag(Sfi);
+            vector norm = Sfi/magSf;
+
+            const symmTensor& tau = interpolatedTau[shape_->index(1,i,k)];
+            vector F =
                 interpolatedP[shape_->index(1,i,k)]
                *shape_->Sf_[shape_->index2(i,k)]
-              + nStress*magSf;
+              + (tau & Sfi);
+            vector Fn = (F & norm)*norm;
+            vector Ft = F - Fn;
 
-            integratedTorque_ -= (tStress*magSf)^pt;
+            integratedForceOld_ += F;
+            integratedTorqueOld_ -= Ft^R;
         }
     }
+
+    integratedForce_ = integratedForceOld_;
+    integratedTorque_ = integratedTorqueOld_;
 }
+
 
 Foam::scalar Foam::particleIBM::Cd
 (
@@ -381,18 +398,13 @@ Foam::scalar Foam::particleIBM::Cd
     vector normUInf(UInf/mag(UInf));
 
     dimensionedScalar Cd
-        (
-            "Cd",
-            dimless,
-            (normUInf & integratedForce_)*2.0
-           /(rhoRef*magSqr(UInf)*shape_->A())
-        );
+    (
+        "Cd",
+        dimless,
+        (normUInf & integratedForce_)*2.0
+        /(rhoRef*magSqr(UInf)*shape_->A(shape_->center_ - normUInf))
+    );
 
-//     combineReduce
-//     (
-//         Cd,
-//         MaxEqOp<dimensionedScalar>()
-//     );
     return Cd.value();
 }
 
@@ -400,4 +412,18 @@ void Foam::particleIBM::update()
 {
     shape_->moveMesh(shape_->center_);
     shape_->updateCellLists();
+
+    if (shape_->centerOnMesh())
+    {
+        active_ = 1;
+    }
+    else
+    {
+        active_ = 0;
+    }
+
+    if (active_)
+    {
+        track(shape_->center() - position(), 1.0);
+    }
 }

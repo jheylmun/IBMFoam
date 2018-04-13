@@ -76,6 +76,13 @@ public:
             const vector& center
         );
 
+        sphere
+        (
+            const particleShape& shape,
+            const vector& center,
+            const vector& theta
+        );
+
     //- Destructor
     virtual ~sphere();
 
@@ -94,7 +101,7 @@ public:
         virtual scalar d() const;
 
         //- Surface area
-        virtual scalar A() const;
+        virtual scalar A(const vector& pt) const;
 
         //- Particle volume
         virtual scalar V() const;

@@ -2,12 +2,15 @@ EXE_INC = \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
     -I$(LIB_SRC)/OpenFOAM/lnInclude \
-    -IparticleSizeDistributions/lnInclude \
-    -DFULLDEBUG -g -O0
+    -I../../../src/particles/lnInclude \
+    -I../../../src/distributions/lnInclude \
+    -IparticleSizeDistributions/lnInclude
 
 EXE_LIBS = \
     -L$(FOAM_USER_LIBBIN) \
     -lfiniteVolume \
     -lmeshTools \
     -lOpenFOAM \
+    -lparticleIBM \
+    -ldistributions \
     -lparticleSizeDistibutions

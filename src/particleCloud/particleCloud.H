@@ -76,10 +76,13 @@ class particleCloud
         const fvMesh& mesh_;
 
         //- dictionary used to initialize points
-        IOdictionary dict_;
+        dictionary dict_;
 
         //- Number of particles since simuation start
         label nParticles_;
+
+        //- List of original particles
+        UPtrList<particleIBM> origParticles_;
 
         //- Reference values
         vector UInf_;
@@ -96,15 +99,24 @@ class particleCloud
         //- IBM source terms (advection, pressure, and viscous stress)
         volVectorField S_;
 
+        //- Is the solution coupled to fluid
+        Switch coupled_;
+
         //- Switch if particles are moving
         Switch moving_;
 
         //- Switch if particles are rotating
         Switch rotating_;
 
-        //- Are there walls?
-        bool walls_;
+        //- List of patch numbers used by particles
+        //  walls, cyclic, processor, and cyclicProcessor
+        labelList patches_;
 
+        //- Are there walls on the mesh
+        labelList walls_;
+
+
+        // Collision variables
 
     // Private functions
 
@@ -117,24 +129,43 @@ class particleCloud
         //- Return rho if specified otherwise rhoRef
         tmp<volScalarField> rho() const;
 
-        //- Calculate collisions
-        void computeCollisions();
+        //- Compute forces due to particle collisions
+        void computeCollisions(const scalar& dt);
 
-        //- Change particle velocities due to wall collisions
-        void computeWallHits();
+        //- Compute forces due to wall collisions
+        void computeWallHits(const scalar& dt);
 
-        //- Find particle based on index
-        const particleIBM* findParticle(const label index) const;
+        //- Does a particle already exist
+        bool found
+        (
+            const label index,
+            const label copy,
+            const vector& center,
+            label& maxCopy
+        ) const;
 
-        //- Find particle based on index
-        particleIBM* findParticle(const label index);
+        //- Return const particle pointer to original particle
+        const particleIBM& origParticle(const label index) const;
+
+        //- Return const particle pointer if it exists
+        const particleIBM* find(const label index, const label copy) const;
+
+        //- Return non-const particle pointer if it exists
+        particleIBM* find(const label index, const label copy);
+
+        //- Check if particles cross cyclic boundaries
+        void computeCyclicHits();
 
         //- Set sorces of particles that have points on mesh,
-        void setInActiveParticleForces();
+        void combineForces();
 
         //- Set positions of particles that have points on mesh,
         //  but not the center
-        void setInActiveParticlePositions();
+        void setPositions();
+
+        //- Delete particles no longer on mesh
+        void deleteInActiveParticles();
+
 
     // Combine fields ops
 
@@ -171,14 +202,36 @@ class particleCloud
 
         //- Max value across procs
         template<class T>
-        class MaxEqOp
+        class combineListEqOp
         {
 
         public:
 
             void operator()(T& x, const T& y) const
             {
-                x = max(x,y);
+                x.append(y);
+            }
+        };
+
+        //- Max value across procs
+        template<class T>
+        class ListListMaxVectorEqOp
+        {
+
+        public:
+
+            void operator()(T& x, const T& y) const
+            {
+                forAll(x, i)
+                {
+                    forAll(x[i], j)
+                    {
+                        if (mag(y[i][j]) > mag(x[i][j]))
+                        {
+                            x[i][j] = y[i][j];
+                        }
+                    }
+                }
             }
         };
 
@@ -191,7 +244,8 @@ public:
         // Construct particleCloud from dictionary entry
         particleCloud
         (
-            const fvMesh& mesh
+            const fvMesh& mesh,
+            const dictionary& dict
         );
 
 
@@ -200,6 +254,12 @@ public:
 
 
     // Access
+
+    //- Number of particle
+        label nParticles() const
+        {
+            return refCast<const Cloud<particleIBM>>(*this).size();
+        }
 
         //- Const access to fvMesh
         const fvMesh& mesh() const
