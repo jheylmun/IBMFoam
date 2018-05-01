@@ -188,8 +188,7 @@ bool Foam::IBM::monodisperse::writeParticles(Ostream& os)
                 << "position" << token::TAB << pShapes_[particlei].center()
                 << token::END_STATEMENT << nl
 
-                << "d" << token::TAB
-                << ds_[pTypei] << token::END_STATEMENT  << nl
+                << pShapes_[particlei]
 
                 << "nTheta" << token::TAB
                 << readLabel(pDict.lookup("nTheta")) << token::END_STATEMENT << nl

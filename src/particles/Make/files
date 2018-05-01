@@ -4,7 +4,7 @@ particleShapes/cylinder/cylinder.C
 particleShapes/ellipse/ellipse.C
 particleShapes/sphere/sphere.C
 
-particleIBM/particleIBM.C
-particleIBM/particleIBMIO.C
+particles/particleIBM/particleIBM.C
+particles/particleIBM/particleIBMIO.C
 
 LIB = $(FOAM_USER_LIBBIN)/libparticleIBM

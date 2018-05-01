@@ -15,12 +15,12 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 particleSizeDistribution monodisperse;
-pTypes (mono1 mono2);
+pTypes (mono1);
 coupled true;
 
 moving true;
-rotating false;
-e 0.8;
+rotating true;
+e 1;
 
 flow
 {
@@ -31,36 +31,46 @@ flow
 
 mono1
 {
-    particleShape   cylinder;
-    volumeFraction  0.2;
-    d               0.05;
-    rho             100;
-    nTheta          100;
-    delta           0.003;
+    particleShape   ellipse;
+    nParticles 1;
+//     volumeFraction  0.1;
+    d               0.15;
+    a 0.05;
+    b 0.15;
+    rho             1000;
+    nTheta          300;
+    delta           0.004;
 
     randomVelocity true;
     velocityDistributionCoeffs
     {
         type gaussian;
         mean 0;
-        variance 0.2;
+        variance 0.25;
+    }
+    randomTheta true;
+    thetaDistributionCoeffs
+    {
+        type uniform;
+        minVal 0;
+        maxVal 6.28;
     }
 }
 mono2
 {
     particleShape   cylinder;
     volumeFraction  0.2;
-    d               0.025;
-    rho             100;
+    d               0.05;
+    rho             1000;
     nTheta          100;
-    delta           0.003;
+    delta           0.004;
 
     randomVelocity true;
     velocityDistributionCoeffs
     {
         type gaussian;
         mean 0;
-        variance 0.1;
+        variance 0.25;
     }
 }
 

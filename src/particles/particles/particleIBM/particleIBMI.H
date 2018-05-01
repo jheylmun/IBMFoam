@@ -34,17 +34,7 @@ Foam::label Foam::particleIBM::copy() const
 
 bool Foam::particleIBM::onMesh() const
 {
-    return (shape_->onMesh_ != particleShape::locationType::OFF_MESH);
-}
-
-bool Foam::particleIBM::centerOnMesh() const
-{
-    return shape_->centerOnMesh();
-}
-
-bool Foam::particleIBM::singleProc() const
-{
-    return shape_->singleProc();
+    return (shape_->onMesh_ != particleShape::OFF_MESH);
 }
 
 bool Foam::particleIBM::active() const
@@ -55,6 +45,11 @@ bool Foam::particleIBM::active() const
 bool& Foam::particleIBM::active()
 {
     return active_;
+}
+
+const Foam::scalar& Foam::particleIBM::delta() const
+{
+    return shape_->delta();
 }
 
 const Foam::vector& Foam::particleIBM::center() const
@@ -73,142 +68,138 @@ const Foam::vector& Foam::particleIBM::theta() const
     return shape_->theta_;
 }
 
-
 Foam::vector& Foam::particleIBM::theta()
 {
     return shape_->theta_;
 }
-
 
 Foam::scalar Foam::particleIBM::r(const vector& x2) const
 {
     return shape_->r(x2);
 }
 
-
 Foam::scalar Foam::particleIBM::d() const
 {
     return shape_->d();
 }
 
+Foam::vector Foam::particleIBM::D() const
+{
+    return shape_->D();
+}
+
+const Foam::tensor& Foam::particleIBM::rotationMatrix() const
+{
+    return shape_->rotationMatrix();
+}
 
 Foam::scalar Foam::particleIBM::mass() const
 {
     return shape_->V()*rho_;
 }
 
-
 const Foam::vector& Foam::particleIBM::v() const
 {
     return v_;
 }
-
 
 Foam::vector& Foam::particleIBM::v()
 {
     return v_;
 }
 
-
 const Foam::vector& Foam::particleIBM::omega() const
 {
     return omega_;
 }
-
 
 Foam::vector& Foam::particleIBM::omega()
 {
     return omega_;
 }
 
-
 const Foam::scalar& Foam::particleIBM::rho() const
 {
     return rho_;
 }
-
 
 Foam::scalar& Foam::particleIBM::rho()
 {
     return rho_;
 }
 
-
 const Foam::vector& Foam::particleIBM::F() const
 {
     return integratedForce_;
 }
-
 
 Foam::vector& Foam::particleIBM::F()
 {
     return integratedForce_;
 }
 
-
 const Foam::vector& Foam::particleIBM::T() const
 {
     return integratedTorque_;
 }
-
 
 Foam::vector& Foam::particleIBM::T()
 {
     return integratedTorque_;
 }
 
-
 const Foam::vectorField& Foam::particleIBM::Fc() const
 {
     return collisionForces_;
 }
-
 
 Foam::vectorField& Foam::particleIBM::Fc()
 {
     return collisionForces_;
 }
 
+const Foam::vectorField& Foam::particleIBM::Tc() const
+{
+    return collisionTorques_;
+}
+
+Foam::vectorField& Foam::particleIBM::Tc()
+{
+    return collisionTorques_;
+}
 
 const Foam::vectorField& Foam::particleIBM::Fw() const
 {
     return wallForces_;
 }
 
-
 Foam::vectorField& Foam::particleIBM::Fw()
 {
     return wallForces_;
 }
 
+const Foam::vectorField& Foam::particleIBM::Tw() const
+{
+    return wallTorques_;
+}
+
+Foam::vectorField& Foam::particleIBM::Tw()
+{
+    return wallTorques_;
+}
+
 void Foam::particleIBM::setCollisions(const label nParticles, const label nWalls)
 {
-    collisionForces_.resize(nParticles);
-    collisionForces_ = Zero;
-
-    wallForces_.resize(nWalls);
-    wallForces_ = Zero;
+    collisionForces_ = vectorField(nParticles, Zero);
+    collisionTorques_ = vectorField(nParticles, Zero);
+    wallForces_ = vectorField(nWalls, Zero);
+    wallTorques_ = vectorField(nWalls, Zero);
 }
 
 
 const Foam::scalar& Foam::particleIBM::age() const
 {
     return age_;
-}
-
-Foam::scalar& Foam::particleIBM::age()
-{
-    return age_;
-}
-
-Foam::label Foam::particleIBM::centerProc() const
-{
-    return shape_->centerProc_;
-}
-
-const Foam::boolList& Foam::particleIBM::neiProcs() const
-{
-    return shape_->neiProcs_;
 }
 
 bool Foam::particleIBM::updatedForce() const

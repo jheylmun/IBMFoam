@@ -67,16 +67,14 @@ Foam::particleShapes::cylinder::cylinder
             << "only valid for 2D meshes"
             << exit(FatalError);
     }
-    momentOfInertia_ = Foam::sqr(d_/2.0);
+    momentOfInertia_ = Foam::sqr(d_/8.0);
     nk_ = 1;
-
-    boundBox bb(mesh.points());
-
-    l_ = mag(bb.max().z() - bb.min().z());
+    l_ = mag(max(mesh.points()).z() - min(mesh.points()).z());
 
     discretize();
     updateCellLists();
     calcSf();
+
 }
 
 Foam::particleShapes::cylinder::cylinder
@@ -90,9 +88,7 @@ Foam::particleShapes::cylinder::cylinder
     d_(refCast<const cylinder>(shape).d_),
     l_(refCast<const cylinder>(shape).l_)
 {
-    discretize();
-    updateCellLists();
-    calcSf();
+    this->moveMesh(center);
 }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -192,13 +188,19 @@ void Foam::particleShapes::cylinder::updateCellLists()
 
     this->setNeighbours();
     this->setWeights();
-    setProcs();
 }
 
 Foam::scalar Foam::particleShapes::cylinder::d() const
 {
     return d_;
 }
+
+
+Foam::vector Foam::particleShapes::cylinder::D() const
+{
+    return vector(d_, d_, d_);
+}
+
 
 Foam::scalar Foam::particleShapes::cylinder::A(const vector& pt) const
 {
@@ -221,19 +223,13 @@ Foam::Ostream& Foam::particleShapes::cylinder::write
     const particleShape& shape
 ) const
 {
-    if (os.format() == IOstream::ASCII)
-    {
-        os  << static_cast<const particleShapes::cylinder&>(shape).d();
-    }
-    else
-    {
-        os  << static_cast<const particleShapes::cylinder&>(shape);
-    }
+    const cylinder& c = static_cast<const particleShapes::cylinder&>(shape);
+    os  << "d" << token::TAB << c.d_ << token::END_STATEMENT << endl;
 
     // Check state of Ostream
     os.check
     (
-        "Ostream& operator<<(Ostream&, const particleShape&)"
+        "Ostream& operator<<(Ostream&, const particleShapes::ellipse&)"
     );
 
     return os;

@@ -94,22 +94,17 @@ void Foam::particleShape::setWeights()
     wFromLocal_ = List<scalarList>(shellCells_.size());
     WFromLocal_ = scalarList(shellCells_.size());
 
-    centerIndex_ = mesh_.findCell(center_);
-    if (nPtsOnMesh == 0 && centerIndex_ == -1)
+    if (nPtsOnMesh == 0 && mesh_.findCell(center_) == -1)
     {
         onMesh_ = OFF_MESH;
     }
-    else if (nPtsOnMesh == baseMesh_.size() && centerIndex_ != -1)
+    else if (nPtsOnMesh == baseMesh_.size())
     {
         onMesh_ = ON_MESH;
     }
-    else if (centerIndex_ != -1)
-    {
-        onMesh_ = PARTIAL_WITH_CENTER;
-    }
     else
     {
-        onMesh_ = PARTIAL_WITHOUT_CENTER;
+        onMesh_ = PARTIAL;
     }
 
     forAll(shellCells_, celli)
@@ -123,7 +118,7 @@ void Foam::particleShape::setWeights()
         forAll(w, pti)
         {
             scalar diff = Foam::mag(CC - baseMesh_[Is_[celli][pti]]);
-            if (diff < 1e-8)
+            if (diff < SMALL)
             {
                 w = 0.0;
                 w[pti] = 1.0;
@@ -184,28 +179,6 @@ void Foam::particleShape::setNeighbours()
             Os_[celli][1] = index(2, jp1, k);
             Os_[celli][2] = index(2, j,   k);
             Os_[celli][3] = index(2, jp1, k);
-        }
-    }
-}
-
-
-void Foam::particleShape::setProcs()
-{
-    if (centerIndex_ != -1)
-    {
-        centerProc_ = Pstream::myProcNo();
-    }
-
-    neiProcs_ = false;
-    forAll(shellCells_, celli)
-    {
-        if
-        (
-            shellCells_[celli] != -1
-         && Pstream::myProcNo() != centerProc_
-        )
-        {
-            neiProcs_[Pstream::myProcNo()] = true;
         }
     }
 }
@@ -275,8 +248,7 @@ Foam::particleShape::particleShape
     neighbourPoints_(N_),
     wToLocal_(N_),
     WToLocal_(N_),
-    facesToLocal_(N_),
-    neiProcs_(Pstream::nProcs(), false)
+    facesToLocal_(N_)
 {}
 
 
@@ -288,7 +260,7 @@ Foam::particleShape::particleShape
 )
 :
     mesh_(shape.mesh_),
-    onMesh_(shape.onMesh_),
+    onMesh_(PARTIAL),
     center_(center),
     momentOfInertia_(shape.momentOfInertia_),
     nTheta_(shape.nTheta_),
@@ -296,14 +268,13 @@ Foam::particleShape::particleShape
     N_(shape.N_),
     theta_(theta),
     delta_(shape.delta_),
-    centeredMesh_(N_, Zero),
+    centeredMesh_(shape.centeredMesh_),
     baseMesh_(N_, Zero),
-    Sf_(nTheta_*nk_, Zero),
+    Sf_(shape.Sf_),
     neighbourPoints_(N_),
     wToLocal_(N_),
     WToLocal_(N_),
-    facesToLocal_(N_),
-    neiProcs_(Pstream::nProcs(), false)
+    facesToLocal_(N_)
 {}
 
 

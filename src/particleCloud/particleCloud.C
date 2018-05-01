@@ -198,11 +198,7 @@ void Foam::particleCloud::combineForces()
                     end = true;
                 }
             }
-            combineReduce
-            (
-                end,
-                ListPlusEqOp<boolList>()
-            );
+            combineReduce(end, ListPlusEqOp<boolList>());
 
             while (!end[0])
             {
@@ -215,16 +211,8 @@ void Foam::particleCloud::combineForces()
                     pIndex[0] = p.index();
                     pUpdated[0] = p.updatedForce();
                 }
-                combineReduce
-                (
-                    pIndex,
-                    ListPlusEqOp<labelList>()
-                );
-                combineReduce
-                (
-                    pUpdated,
-                    ListPlusEqOp<boolList>()
-                );
+                combineReduce(pIndex, ListPlusEqOp<labelList>());
+                combineReduce(pUpdated, ListPlusEqOp<boolList>());
 
                 if (!pUpdated[0])
                 {
@@ -245,16 +233,8 @@ void Foam::particleCloud::combineForces()
                     }
 
                     // Combine forces acting on particle pIndex
-                    combineReduce
-                    (
-                        totF,
-                        plusEqOp<vector>()
-                    );
-                    combineReduce
-                    (
-                        totT,
-                        plusEqOp<vector>()
-                    );
+                    combineReduce(totF, plusEqOp<vector>());
+                    combineReduce(totT, plusEqOp<vector>());
 
                     forAllIter
                     (
@@ -281,11 +261,7 @@ void Foam::particleCloud::combineForces()
                         end = true;
                     }
                 }
-                combineReduce
-                (
-                    end,
-                    ListPlusEqOp<boolList>()
-                );
+                combineReduce(end, ListPlusEqOp<boolList>());
             }
         }
     }
@@ -341,25 +317,6 @@ void Foam::particleCloud::setPositions()
 {
     if (Pstream::parRun())
     {
-        forAllIter
-        (
-            typename Cloud<particleIBM>,
-            *this,
-            pIter
-        )
-        {
-            particleIBM& p = pIter();
-            if (p.centerOnMesh())
-            {
-                p.active() = true;
-            }
-            else
-            {
-                p.active() = false;
-            }
-            p.updatedPosition() = false;
-        }
-
         for
         (
             label proci = 0;
@@ -371,16 +328,12 @@ void Foam::particleCloud::setPositions()
             boolList end(1, false);
             if (Pstream::myProcNo() == proci)
             {
-                if ((*this).cend() == pIter)
+                if (!nParticles())
                 {
                     end = true;
                 }
             }
-            combineReduce
-            (
-                end,
-                ListPlusEqOp<boolList>()
-            );
+            combineReduce(end, ListPlusEqOp<boolList>());
 
             while (!end[0])
             {
@@ -396,21 +349,9 @@ void Foam::particleCloud::setPositions()
                     pActive[0] = p.active();
 
                 }
-                combineReduce
-                (
-                    pIndex,
-                    ListPlusEqOp<labelList>()
-                );
-                combineReduce
-                (
-                    pCopy,
-                    ListPlusEqOp<labelList>()
-                );
-                combineReduce
-                (
-                    pActive,
-                    ListPlusEqOp<boolList>()
-                );
+                combineReduce(pIndex, ListPlusEqOp<labelList>());
+                combineReduce(pCopy, ListPlusEqOp<labelList>());
+                combineReduce(pActive, ListPlusEqOp<boolList>());
 
                 if (pActive[0])
                 {
@@ -428,26 +369,10 @@ void Foam::particleCloud::setPositions()
                         pOmega = p.omega();
                     }
 
-                    combineReduce
-                    (
-                        pCenter,
-                        plusEqOp<vector>()
-                    );
-                    combineReduce
-                    (
-                        pTheta,
-                        plusEqOp<vector>()
-                    );
-                    combineReduce
-                    (
-                        pV,
-                        plusEqOp<vector>()
-                    );
-                    combineReduce
-                    (
-                        pOmega,
-                        plusEqOp<vector>()
-                    );
+                    combineReduce(pCenter, plusEqOp<vector>());
+                    combineReduce(pTheta, plusEqOp<vector>());
+                    combineReduce(pV, plusEqOp<vector>());
+                    combineReduce(pOmega, plusEqOp<vector>());
 
                     forAllIter
                     (
@@ -456,11 +381,7 @@ void Foam::particleCloud::setPositions()
                         p2Iter
                     )
                     {
-                        if
-                        (
-                            p2Iter().index() == pIndex[0]
-                         && !p2Iter().updatedPosition()
-                        )
+                        if (p2Iter().index() == pIndex[0])
                         {
                             if (p2Iter().copy() == pCopy[0])
                             {
@@ -473,6 +394,7 @@ void Foam::particleCloud::setPositions()
                         }
                     }
                 }
+
                 end = false;
                 if (Pstream::myProcNo() == proci)
                 {
@@ -482,11 +404,7 @@ void Foam::particleCloud::setPositions()
                         end = true;
                     }
                 }
-                combineReduce
-                (
-                    end,
-                    ListPlusEqOp<boolList>()
-                );
+                combineReduce(end, ListPlusEqOp<boolList>());
             }
         }
     }
@@ -526,110 +444,11 @@ void Foam::particleCloud::setPositions()
 }
 
 
-void Foam::particleCloud::computeCollisions(const scalar& deltaT)
-{
-    forAllIter(typename Cloud<particleIBM>, *this, pIter)
-    {
-        particleIBM& p1 = pIter();
-
-        const vector& x1 = p1.center();
-        vector& v1 = p1.v();
-        scalar mass1 = p1.mass();
-
-        forAllIter(typename Cloud<particleIBM>, *this, p2Iter)
-        {
-            particleIBM& p2 = p2Iter();
-            const vector& x2 = p2.center();
-            vector& v2 = p2.v();
-            scalar mass2 = p2.mass();
-
-            vector x12 = x1 - x2;
-            scalar magX12 = mag(x12);
-            vector v12 = v1 - v2;
-
-            scalar r1 = p1.r(x2);
-            scalar r2 = p2.r(x1);
-
-            if (p1.index() > p2.index() && p1.onMesh() && p2.onMesh())
-            {
-                scalar normalOverlapMag = (r1 + r2) - magX12;
-
-                if (normalOverlapMag > 0 && (x12 & v12) < 0 && (&p1 != &p2))
-                {
-                    scalar M = mass1*mass2/(mass1 + mass2);
-
-                    vector norm = x12/mag(x12);
-
-                    vector Fn = Zero;
-                    vector Ft = Zero;
-
-                    scalar x12Dotv12 = x12 & v12;
-                    scalar x12Sqr = magSqr(x12);
-
-                    vector F = 2.0*M*x12Dotv12/x12Sqr*x12*e_/deltaT;
-                    Fn = (F & norm)*norm;
-                    Ft = F - Fn;
-
-                    p1.Fc()[p2.index()] = -Fn;
-                    p2.Fc()[p1.index()] = Fn;
-                }
-            }
-        }
-    }
-
-    if (Pstream::parRun())
-    {
-        List<vectorList> Fc(nParticles_, vectorList(nParticles_, Zero));
-        forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
-        {
-            Fc[pIter().index()] = pIter().Fc();
-        }
-        combineReduce
-        (
-            Fc,
-            ListListMaxVectorEqOp<List<vectorList>>()
-        );
-
-        forAllIter(typename Cloud<particleIBM>, *this, pIter)
-        {
-            pIter().Fc() = Fc[pIter().index()];
-        }
-    }
-    else
-    {
-        forAllIter(typename Cloud<particleIBM>, *this, pIter)
-        {
-            forAllIter(typename Cloud<particleIBM>, *this, p2Iter)
-            {
-                if (pIter().index() == p2Iter().index())
-                {
-                    if
-                    (
-                        mag(pIter().Fc()[p2Iter().index()])
-                      > mag(p2Iter().Fc()[pIter().index()])
-                    )
-                    {
-                        p2Iter().Fc()[p2Iter().index()] =
-                            pIter().Fc()[pIter().index()];
-                    }
-                    else
-                    {
-                        pIter().Fc()[p2Iter().index()] =
-                            p2Iter().Fc()[pIter().index()];
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 bool Foam::particleCloud::found
 (
     const label index,
     const label copy,
-    const vector& center,
-    label& maxCopy
+    const vector& center
 ) const
 {
     bool f = false;
@@ -648,11 +467,10 @@ bool Foam::particleCloud::found
             )
          || (
                 index == pIter().index()
-             && mag(center - pIter().center()) < SMALL
+             && mag(center - pIter().center()) < 1e-4
             )
         )
         {
-            maxCopy = max(maxCopy, pIter().copy());
             f = true;
         }
     }
@@ -661,19 +479,105 @@ bool Foam::particleCloud::found
 }
 
 
-const Foam::particleIBM& Foam::particleCloud::origParticle(const label index) const
+void Foam::particleCloud::computeCollisions(const scalar& deltaT)
 {
-    forAll(origParticles_, particlei)
+    forAllIter(typename Cloud<particleIBM>, *this, pIter)
     {
-        if (index == origParticles_[particlei].index())
+        particleIBM& p1 = pIter();
+
+        const vector& x1 = p1.center();
+        vector& v1 = p1.v();
+        scalar mass1 = p1.mass();
+
+        forAllIter(typename Cloud<particleIBM>, *this, p2Iter)
         {
-            return origParticles_[particlei];
+            particleIBM& p2 = p2Iter();
+            const vector& x2 = p2.center();
+            vector& v2 = p2.v();
+            scalar mass2 = p2.mass();
+
+            vector x12 = x1 - x2;
+            vector v12 = v1 - v2;
+
+            if (p1.index() > p2.index() && p1.onMesh() && p2.onMesh())
+            {
+                vector hitPt = Zero;
+
+                if (particleIBM::collision(p1, p2, hitPt) && (x12 & v12) < 0)
+                {
+                    scalar M = mass1*mass2/(mass1 + mass2);
+
+                    scalar x12Dotv12 = x12 & v12;
+                    scalar x12Sqr = magSqr(x12);
+
+                    vector F = 2.0*M*x12Dotv12/x12Sqr*x12*e_/deltaT;
+
+                    p1.Fc()[p2.index()] = -F;
+                    p2.Fc()[p1.index()] = F;
+
+                    p1.Tc()[p2.index()] = -F^hitPt;
+                    p2.Tc()[p1.index()] = F^hitPt;
+                }
+            }
         }
     }
-    FatalErrorInFunction
-        << "Particle." << index << "not found"
-        << exit(FatalError);
-    return origParticles_[0];
+
+    forAllIter(typename Cloud<particleIBM>, *this, pIter)
+    {
+        forAllIter(typename Cloud<particleIBM>, *this, p2Iter)
+        {
+            if (pIter().index() == p2Iter().index())
+            {
+                forAllIter(typename Cloud<particleIBM>, *this, p3Iter)
+                {
+                    if
+                    (
+                        mag(pIter().Fc()[p3Iter().index()])
+                    > mag(p2Iter().Fc()[p3Iter().index()])
+                    )
+                    {
+                        p2Iter().Fc()[p3Iter().index()] =
+                            pIter().Fc()[p3Iter().index()];
+                        p2Iter().Tc()[p3Iter().index()] =
+                            pIter().Tc()[p3Iter().index()];
+                    }
+                    else
+                    {
+                        pIter().Fc()[p3Iter().index()] =
+                            p2Iter().Fc()[p3Iter().index()];
+                        pIter().Tc()[p3Iter().index()] =
+                            p2Iter().Tc()[p3Iter().index()];
+                    }
+                }
+            }
+        }
+    }
+    if (Pstream::parRun())
+    {
+        List<vectorList> Fc(nParticles_, vectorList(nParticles_, Zero));
+        List<vectorList> Tc(nParticles_, vectorList(nParticles_, Zero));
+        forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
+        {
+            Fc[pIter().index()] = pIter().Fc();
+            Tc[pIter().index()] = pIter().Tc();
+        }
+        combineReduce
+        (
+            Fc,
+            ListListMaxVectorEqOp<List<vectorList>>()
+        );
+        combineReduce
+        (
+            Tc,
+            ListListMaxVectorEqOp<List<vectorList>>()
+        );
+
+        forAllIter(typename Cloud<particleIBM>, *this, pIter)
+        {
+            pIter().Fc() = Fc[pIter().index()];
+            pIter().Tc() = Tc[pIter().index()];
+        }
+    }
 }
 
 
@@ -703,10 +607,12 @@ void Foam::particleCloud::computeWallHits(const scalar& deltaT)
                     if (mag(pIter().Fw()[patchi]) > mag(p2Iter().Fw()[patchi]))
                     {
                         p2Iter().Fw()[patchi] = pIter().Fw()[patchi];
+                        p2Iter().Tw()[patchi] = pIter().Tw()[patchi];
                     }
                     else
                     {
                         pIter().Fw()[patchi] = p2Iter().Fw()[patchi];
+                        pIter().Tw()[patchi] = p2Iter().Tw()[patchi];
                     }
                 }
             }
@@ -719,9 +625,15 @@ void Foam::particleCloud::computeWallHits(const scalar& deltaT)
             nParticles_,
             vectorList(walls_.size(), Zero)
         );
+         List<vectorList> Tw
+        (
+            nParticles_,
+            vectorList(walls_.size(), Zero)
+        );
         forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
         {
             Fw[pIter().index()] = pIter().Fw();
+            Tw[pIter().index()] = pIter().Tw();
         }
 
         combineReduce
@@ -729,10 +641,16 @@ void Foam::particleCloud::computeWallHits(const scalar& deltaT)
             Fw,
             ListListMaxVectorEqOp<List<vectorList>>()
         );
+        combineReduce
+        (
+            Tw,
+            ListListMaxVectorEqOp<List<vectorList>>()
+        );
 
         forAllIter(typename Cloud<particleIBM>, *this, pIter)
         {
             pIter().Fw() = Fw[pIter().index()];
+            pIter().Tw() = Tw[pIter().index()];
         }
     }
 }
@@ -761,6 +679,7 @@ void Foam::particleCloud::computeCyclicHits()
     // Info = {index, copy, neiProcID, neiFace, neiProc}
     List<vectorList> newProcessorCyclicVectors; // R, theta, v, omega
     scalarList newProcessorCyclicAges;
+    wordList newProcessorCyclicPatchNames;
     labelListList newProcessorCyclicInfo;
 
     forAll(patches_, i)
@@ -779,7 +698,6 @@ void Foam::particleCloud::computeCyclicHits()
 
             if (facei != -1)
             {
-                label maxCopy = p.copy();
                 if (isA<cyclicFvPatch>(mesh_.boundary()[patchi]))
                 {
                     const cyclicPolyPatch& patch =
@@ -792,7 +710,7 @@ void Foam::particleCloud::computeCyclicHits()
                       + mesh_.Cf().boundaryField()
                         [patch.neighbPatchID()][facei];
 
-                    if (!found(p.index(), p.copy(), newCenter, maxCopy))
+                    if (!found(p.index(), p.copy(), newCenter))
                     {
                         newCyclicVectors.append
                         (
@@ -806,11 +724,15 @@ void Foam::particleCloud::computeCyclicHits()
                         newCyclicAges.append(p.age());
                         newCyclicInfo.append
                         (
-                            labelList({p.index(), p.copy(), maxCopy})
+                            labelList({p.index(), p.copy()})
                         );
                     }
                 }
-                else if (isA<processorFvPatch>(mesh_.boundary()[patchi]))
+                else if
+                (
+                    isA<processorFvPatch>(mesh_.boundary()[patchi])
+                 && !isA<processorCyclicFvPatch>(mesh_.boundary()[patchi])
+                )
                 {
                     const processorPolyPatch& patch =
                         refCast<const processorPolyPatch>
@@ -830,12 +752,18 @@ void Foam::particleCloud::computeCyclicHits()
                     newProcessorAges.append(p.age());
                     newProcessorInfo.append
                     (
-                        labelList({p.index(), p.copy(), patch.neighbProcNo()}));
+                        labelList
+                        (
+                            {
+                                p.index(),
+                                p.copy(),
+                                patch.neighbProcNo(),
+                                patch.myProcNo()
+                            }
+                        )
+                    );
                 }
-                else if
-                (
-                    isA<processorCyclicFvPatch>(mesh_.boundary()[patchi])
-                )
+                else if (isA<processorCyclicFvPatch>(mesh_.boundary()[patchi]))
                 {
                     const processorCyclicPolyPatch& patch =
                         refCast<const processorCyclicPolyPatch>
@@ -845,13 +773,28 @@ void Foam::particleCloud::computeCyclicHits()
                     newProcessorCyclicVectors.append
                     (
                         {
-                            p.center(),
+                            R,
                             p.theta(),
                             p.v(),
                             p.omega()
                         }
                     );
+                    const cyclicPolyPatch& cyclicPatch =
+                        refCast<const cyclicPolyPatch>
+                        (
+                            mesh_.boundaryMesh()[patch.referPatchID()]
+                        );
+
                     newProcessorCyclicAges.append(p.age());
+                    newProcessorCyclicPatchNames.append
+                    (
+                        "procBoundary"
+                      +  Foam::name(patch.neighbProcNo())
+                      + "to"
+                      + Foam::name(patch.myProcNo())
+                      + "through"
+                      + cyclicPatch.neighbPatchName()
+                    );
                     newProcessorCyclicInfo.append
                     (
                         labelList
@@ -859,7 +802,6 @@ void Foam::particleCloud::computeCyclicHits()
                             {
                                 p.index(),
                                 p.copy(),
-                                patch.referPatchID(),
                                 facei,
                                 patch.neighbProcNo()
                             }
@@ -872,12 +814,13 @@ void Foam::particleCloud::computeCyclicHits()
 
     forAll(newCyclicInfo, newParticlei)
     {
+        label index = newCyclicInfo[newParticlei][0];
         this->append
         (
             new particleIBM
             (
-                origParticle(newCyclicInfo[newParticlei][0]),
-                newCyclicInfo[newParticlei][2] + 1,
+                origParticles_[index],
+                maxCopies_[index] + 1,
                 newCyclicVectors[newParticlei][0],
                 newCyclicVectors[newParticlei][1],
                 newCyclicVectors[newParticlei][2],
@@ -885,10 +828,13 @@ void Foam::particleCloud::computeCyclicHits()
                 newCyclicAges[newParticlei]
             )
         );
+        maxCopies_[index]++;
     }
 
     if (Pstream::parRun())
     {
+        combineReduce(maxCopies_, ListMaxEqOp<labelList>());
+
         combineReduce
         (
             newProcessorVectors,
@@ -916,30 +862,31 @@ void Foam::particleCloud::computeCyclicHits()
         );
         combineReduce
         (
+            newProcessorCyclicPatchNames,
+            combineListEqOp<wordList>()
+        );
+        combineReduce
+        (
             newProcessorCyclicInfo,
             combineListEqOp<labelListList>()
         );
 
         forAll(newProcessorInfo, newParticlei)
         {
-            if
-            (
-                Pstream::myProcNo()
-             == newProcessorInfo[newParticlei][2]
-            )
+            if (Pstream::myProcNo() == newProcessorInfo[newParticlei][2])
             {
                 label index = newProcessorInfo[newParticlei][0];
                 label copy = newProcessorInfo[newParticlei][1];
                 vector center = newProcessorVectors[newParticlei][0];
-                label maxCopy = 0;
-                if (!found(index, copy, center, maxCopy))
+
+                if (!found(index, copy, center))
                 {
                     this->append
                     (
                         new particleIBM
                         (
-                            origParticle(index),
-                            maxCopy + 1,
+                            origParticles_[index],
+                            copy,
                             center,
                             newProcessorVectors[newParticlei][1],
                             newProcessorVectors[newParticlei][2],
@@ -953,27 +900,27 @@ void Foam::particleCloud::computeCyclicHits()
 
         forAll(newProcessorCyclicInfo, newParticlei)
         {
-            if
-            (
-                Pstream::myProcNo() == newProcessorCyclicInfo[newParticlei][4]
-            )
+            if (Pstream::myProcNo() == newProcessorCyclicInfo[newParticlei][3])
             {
                 label index = newProcessorCyclicInfo[newParticlei][0];
                 label copy = newProcessorCyclicInfo[newParticlei][1];
+                label patchID =
+                    mesh_.boundaryMesh().findPatchID
+                    (
+                        newProcessorCyclicPatchNames[newParticlei]
+                    );
                 vector newCenter =
                     newProcessorCyclicVectors[newParticlei][0]
                   + mesh_.Cf().boundaryField()
-                    [newProcessorCyclicInfo[newParticlei][2]][newProcessorCyclicInfo[newParticlei][3]];
-
-                label maxCopy = 0;
-                if (!found(index, copy, newCenter, maxCopy))
+                    [patchID][newProcessorCyclicInfo[newParticlei][2]];
+                if (!found(index, copy, newCenter))
                 {
                     this->append
                     (
                         new particleIBM
                         (
-                            origParticle(index),
-                            maxCopy + 1,
+                            origParticles_[index],
+                            maxCopies_[index] + 1,
                             newCenter,
                             newProcessorCyclicVectors[newParticlei][1],
                             newProcessorCyclicVectors[newParticlei][2],
@@ -981,9 +928,11 @@ void Foam::particleCloud::computeCyclicHits()
                             newProcessorCyclicAges[newParticlei]
                         )
                     );
+                    maxCopies_[index]++;
                 }
             }
         }
+        combineReduce(maxCopies_, ListMaxEqOp<labelList>());
     }
 }
 
@@ -1000,12 +949,14 @@ void Foam::particleCloud::deleteInActiveParticles()
     }
 }
 
+
 // * * * * * * * * * * * * * * * Constructor * * * * * * * * * * * * * * * * //
 
 Foam::particleCloud::particleCloud
 (
     const fvMesh& mesh,
-    const dictionary& dict
+    const dictionary& dict,
+    const dimensionedVector& g
 )
 :
     Cloud<particleIBM>
@@ -1031,6 +982,7 @@ Foam::particleCloud::particleCloud
     (
         dict_.subDict("flow").template lookupOrDefault<scalar>("pInf", 0.0)
     ),
+    g_(g.value()),
     e_(readScalar(dict_.lookup("e"))),
     Uold_
     (
@@ -1062,15 +1014,19 @@ Foam::particleCloud::particleCloud
     ),
     coupled_(dict_.lookup("coupled")),
     moving_(dict_.lookup("moving")),
-    rotating_(dict_.lookup("rotating"))
+    rotating_(dict_.lookup("rotating")),
+    maxCopies_(nParticles_, -1)
 {
     forAll(mesh_.boundary(), patchi)
     {
         if
         (
-            isA<cyclicFvPatch>(mesh_.boundary()[patchi])
-         || isA<processorFvPatch>(mesh_.boundary()[patchi])
-         || isA<processorCyclicFvPatch>(mesh_.boundary()[patchi])
+            (
+                isA<cyclicFvPatch>(mesh_.boundary()[patchi])
+             || isA<processorFvPatch>(mesh_.boundary()[patchi])
+             || isA<processorCyclicFvPatch>(mesh_.boundary()[patchi])
+            )
+         && mesh_.boundary()[patchi].size() != 0
         )
         {
             patches_.append(patchi);
@@ -1093,8 +1049,9 @@ Foam::particleCloud::particleCloud
                 )
             );
 
-        this->append
+        origParticles_.set
         (
+            i,
             new particleIBM
             (
                 mesh_,
@@ -1102,23 +1059,46 @@ Foam::particleCloud::particleCloud
                 i
             )
         );
+        origParticles_[i].setCollisions(nParticles_, walls_.size());
     }
 
-    label i = 0;
-    forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
+    if (mesh_.time().value() == 0)
     {
-        const particleIBM& p = pIter();
-        origParticles_.set(i, new particleIBM(p));
-        origParticles_[i].setCollisions(nParticles_, walls_.size());
-        i++;
+        for (label i = 0; i < nParticles_; i++)
+        {
+            const dictionary& pDict =
+                dict_.subDict
+                (
+                    IOobject::groupName
+                    (
+                        "particle",
+                        Foam::name(i)
+                    )
+                );
+
+            this->append
+            (
+                new particleIBM
+                (
+                    mesh_,
+                    pDict,
+                    i
+                )
+            );
+        }
     }
+    else
+    {
+        readParticles();
+    }
+
+    deleteInActiveParticles();
 
     forAllIter(typename Cloud<particleIBM>, *this, pIter)
     {
         pIter().setCollisions(nParticles_, walls_.size());
+        maxCopies_[pIter().index()] = 0;
     }
-
-    deleteInActiveParticles();
 }
 
 
@@ -1129,6 +1109,19 @@ Foam::particleCloud::~particleCloud()
 
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
+
+Foam::scalar Foam::particleCloud::maxCoNum() const
+{
+    scalar maxCo = 0.0;
+
+    forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
+    {
+        pIter().v()/pIter().delta()*mesh_.time().value();
+    }
+
+    return maxCo;
+
+}
 
 Foam::tmp<Foam::volVectorField> Foam::particleCloud::forcing
 (
@@ -1220,7 +1213,7 @@ void Foam::particleCloud::solve()
     combineForces();
 
     scalar dt = mesh_.time().deltaT().value();
-    scalar localDt = dt/10.0;
+    scalar localDt = dt/100.0;
     scalar localTime = localDt;
 
     while (localTime < dt)
@@ -1231,12 +1224,11 @@ void Foam::particleCloud::solve()
             computeWallHits(localDt);
             computeCyclicHits();
         }
-        combineForces();
 
         forAllIter(typename Cloud<particleIBM>, *this, pIter)
         {
             particleIBM& p = pIter();
-            p.solve(localDt, moving_, rotating_);
+            p.solve(localDt, g_, moving_, rotating_);
         }
         setPositions();
 
@@ -1248,20 +1240,6 @@ void Foam::particleCloud::solve()
         {
             localTime += localDt;
         }
-    }
-
-    vector avgV = Zero;
-    vector avgOmega = Zero;
-    vector avgP = Zero;
-    scalarList totK(1, 0.0);
-    forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
-    {
-        const particleIBM& p = pIter();
-
-        avgOmega += p.omega()*p.active();
-        avgV += p.v()*p.active();
-        avgP += p.v()*p.mass()*p.active();
-        totK[0] += 0.5*p.mass()*(p.v() & p.v())*p.active();
     }
 
     forAllIter
@@ -1283,7 +1261,21 @@ void Foam::particleCloud::solve()
         ListPlusEqOp<labelList>()
     );
 
-    if (nParticles)
+    vector avgV = Zero;
+    vector avgOmega = Zero;
+    vector avgP = Zero;
+    scalarList totK(1, 0.0);
+    forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
+    {
+        const particleIBM& p = pIter();
+
+        avgOmega += p.omega()*p.active();
+        avgV += p.v()*p.active();
+        avgP += p.v()*p.mass()*p.active();
+        totK[0] += 0.5*p.mass()*(p.v() & p.v())*p.active();
+    }
+
+    if (totParticles[0])
     {
         combineReduce(avgV, plusEqOp<vector>());
         combineReduce(avgOmega, plusEqOp<vector>());
@@ -1291,112 +1283,10 @@ void Foam::particleCloud::solve()
         combineReduce(totK, ListPlusEqOp<scalarList>());
 
         Info<< "    Actual number of active particles: " << nParticles_ << nl
-            << "    Total number of active particles: " << totParticles << nl
-            << "    Average velocity: " << avgV/nParticles << nl
-            << "    Average omega: " << avgOmega/nParticles << nl
-            << "    Average momentum: " << avgP/nParticles << nl
+            << "    Total number of solved particles: " << totParticles[0] << nl
+            << "    Average velocity: " << avgV/nParticles_ << nl
+            << "    Average omega: " << avgOmega/nParticles_ << nl
+            << "    Average momentum: " << avgP/nParticles_ << nl
             << "    total K: " << totK[0] << endl;
     }
-
-    IOField<scalar> cds(fieldIOobject("Cd", IOobject::NO_READ), this->size());
-    Cd(cds);
 }
-
-// void Foam::particleCloud::computeCyclicHits()
-// {
-//     if (!walls_)
-//     {
-//         return;
-//     }
-//
-//     vectorList newCenters;
-//     labelListList newParticleInfo;
-//
-//     forAll(mesh_.boundary(), patchi)
-//     {
-//         if (isA<cyclicFvPatch>(mesh_.boundary()[patchi]))
-//         {
-//             const cyclicPolyPatch& patch =
-//                 refCast<const cyclicPolyPatch>
-//                 (
-//                     mesh_.boundaryMesh()[patchi]
-//                 );
-//             label neiPatchID = patch.neighbPatchID();
-//
-//             forAllConstIter(typename Cloud<particleIBM>, *this, pIter)
-//             {
-//                 const particleIBM& p = pIter();
-//                 vector R = Zero;
-//                 label facei = p.cyclicHit
-//                 (
-//                     mesh_,
-//                     patchi,
-//                     R
-//                 );
-//
-//                 if (facei != -1)
-//                 {
-//                     vector newCenter =
-//                         R + mesh_.Cf().boundaryField()[neiPatchID][facei];
-//
-//                     bool found = false;
-//                     label maxCopy = p.copy();
-//                     forAllConstIter
-//                     (
-//                         typename Cloud<particleIBM>,
-//                         *this,
-//                         p2Iter
-//                     )
-//                     {
-//                         if
-//                         (
-//                             p.index() == p2Iter().index()
-//                          && (maxCopy + 1) <= p2Iter().copy()
-//                         )
-//                         {
-//                             found = true;
-//                             maxCopy = max(maxCopy, p2Iter().copy());
-//                         }
-//                     }
-//
-//                     if (!found)
-//                     {
-//                         newCenters.append(newCenter);
-//                         newParticleInfo.append
-//                         (
-//                             labelList({p.index(), p.copy(), maxCopy})
-//                         );
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//
-//     forAll(newCenters, newParticlei)
-//     {
-//         forAllConstIter
-//         (
-//             typename Cloud<particleIBM>,
-//             *this,
-//             pIter
-//         )
-//         {
-//             if
-//             (
-//                 pIter().index() == newParticleInfo[newParticlei][0]
-//              && pIter().copy() == newParticleInfo[newParticlei][1]
-//             )
-//             {
-//                 this->append
-//                 (
-//                     new particleIBM
-//                     (
-//                         pIter(),
-//                         newCenters[newParticlei],
-//                         newParticleInfo[newParticlei][2] + 1
-//                     )
-//                 );
-//             }
-//         }
-//     }
-// }

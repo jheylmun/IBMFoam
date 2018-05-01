@@ -90,6 +90,9 @@ class particleCloud
         scalar rhoRef_;
         scalar pRef_;
 
+        //- Gravitational acceleration
+        vector g_;
+
         //- Coefficient of restitution
         scalar e_;
 
@@ -114,6 +117,9 @@ class particleCloud
 
         //- Are there walls on the mesh
         labelList walls_;
+
+        //- Maximum copy number
+        labelList maxCopies_;
 
 
         // Collision variables
@@ -140,12 +146,8 @@ class particleCloud
         (
             const label index,
             const label copy,
-            const vector& center,
-            label& maxCopy
+            const vector& center
         ) const;
-
-        //- Return const particle pointer to original particle
-        const particleIBM& origParticle(const label index) const;
 
         //- Return const particle pointer if it exists
         const particleIBM* find(const label index, const label copy) const;
@@ -215,6 +217,21 @@ class particleCloud
 
         //- Max value across procs
         template<class T>
+        class ListMaxEqOp
+        {
+
+        public:
+
+            void operator()(T& x, const T& y) const
+            {
+                forAll(x, i)
+                {
+                    x[i] = max(x[i], y[i]);
+                }
+            }
+        };
+        //- Max value across procs
+        template<class T>
         class ListListMaxVectorEqOp
         {
 
@@ -245,7 +262,8 @@ public:
         particleCloud
         (
             const fvMesh& mesh,
-            const dictionary& dict
+            const dictionary& dict,
+            const dimensionedVector& g
         );
 
 
@@ -255,7 +273,7 @@ public:
 
     // Access
 
-    //- Number of particle
+        //- Number of particle
         label nParticles() const
         {
             return refCast<const Cloud<particleIBM>>(*this).size();
@@ -290,6 +308,9 @@ public:
         {
             return pRef_;
         }
+
+        //- Return particle courant number (v*deltaT/delta)
+        scalar maxCoNum() const;
 
     // Edit
 
@@ -328,6 +349,8 @@ public:
             IOstream::compressionType cmp,
             const bool valid
         ) const;
+
+        void readParticles();
 
 
     // Ostream operator

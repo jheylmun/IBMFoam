@@ -22,6 +22,29 @@ License
 #include "ellipse.H"
 #include "addToRunTimeSelectionTable.H"
 
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+namespace Foam
+{
+namespace particleShapes
+{
+    defineTypeNameAndDebug(ellipse, 0);
+
+    addToRunTimeSelectionTable
+    (
+        particleShape,
+        ellipse,
+        dictionary
+    );
+    addToRunTimeSelectionTable
+    (
+        particleShape,
+        ellipse,
+        copy
+    );
+}
+}
+
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 void Foam::particleShapes::ellipse::calcSf()
@@ -37,26 +60,8 @@ void Foam::particleShapes::ellipse::calcSf()
 
 Foam::tmp<Foam::vectorField> Foam::particleShapes::ellipse::rotate()
 {
-    return centeredMesh_ & rotationMatrix_;
+    return rotationMatrix_ & centeredMesh_ ;
 }
-
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-namespace Foam
-{
-namespace particleShapes
-{
-    defineTypeNameAndDebug(ellipse, 0);
-
-    addToRunTimeSelectionTable
-    (
-        particleShape,
-        ellipse,
-        dictionary
-    );
-}
-}
-
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -79,12 +84,9 @@ Foam::particleShapes::ellipse::ellipse
             << exit(FatalError);
     }
 
-    this->momentOfInertia_ = a_*b_/4.0;
+    this->momentOfInertia_ = (sqr(a_) + sqr(b_));
     nk_ = 1;
-
-    boundBox bb(mesh.points());
-
-    l_ = mag(bb.max().z() - bb.min().z());
+    l_ = mag(max(mesh.points()).z() - min(mesh.points()).z());
 
     discretize();
     updateCellLists();
@@ -103,9 +105,7 @@ Foam::particleShapes::ellipse::ellipse
     b_(refCast<const ellipse>(shape).b_),
     l_(refCast<const ellipse>(shape).l_)
 {
-    discretize();
-    updateCellLists();
-    calcSf();
+    this->moveMesh(this->center_);
 }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
@@ -119,7 +119,7 @@ Foam::particleShapes::ellipse::~ellipse()
 void Foam::particleShapes::ellipse::discretize()
 {
     scalar Pi = constant::mathematical::pi;
-    vector delta(-1*delta_, 0, delta_);
+    vector delta(-delta_, 0, delta_);
     scalar dTheta(2.0*Pi/(nTheta_));
 
     for (label i = 0; i < nRadial_; i++)
@@ -128,7 +128,7 @@ void Foam::particleShapes::ellipse::discretize()
         {
             scalar theta = scalar(j)*dTheta;
             scalar R =
-                sqrt(1.0/(sqr(cos(theta)/a_) + sqr(sin(theta)/b_)))
+                sqrt(1.0/(sqr(cos(theta)/(a_)) + sqr(sin(theta)/(b_))))
               + delta[i];
             label celli = index(i,j,0);
 
@@ -141,7 +141,7 @@ void Foam::particleShapes::ellipse::discretize()
                 );
         }
     }
-    this->moveMesh(this->center());
+    this->moveMesh(this->center_);
 }
 
 
@@ -169,7 +169,14 @@ void Foam::particleShapes::ellipse::updateCellLists()
             shellCells_[i] = celli;
 
             scalar theta = Foam::atan2(diff.y(),diff.x()) - theta_.z();
-            if (theta < 0) theta += twoPi;
+            while (theta < 0)
+            {
+                theta += twoPi;
+            }
+            while (theta > twoPi)
+            {
+                theta -= twoPi;
+            }
 
             neighbourPoints_[i] =
             (
@@ -180,6 +187,7 @@ void Foam::particleShapes::ellipse::updateCellLists()
                     0
                 )
             );
+
             i++;
         }
     }
@@ -188,19 +196,29 @@ void Foam::particleShapes::ellipse::updateCellLists()
 
     this->setNeighbours();
     this->setWeights();
-    setProcs();
 }
 
 Foam::scalar Foam::particleShapes::ellipse::d() const
 {
-    return a_*b_*Foam::constant::mathematical::twoPi*sqrt((sqr(a_) + sqr(b_))/2.0);
+    return
+        1.55*pow(A(Zero), 0.625)
+       /(
+           Foam::constant::mathematical::twoPi
+          *sqrt(0.5*sqr(a_) + (sqr(b_)))
+        );
 }
+
+Foam::vector Foam::particleShapes::ellipse::D() const
+{
+    return vector(a_, b_, l_);
+}
+
 
 Foam::scalar Foam::particleShapes::ellipse::r(const vector& pt) const
 {
     vector diff = pt - center_;
     scalar theta = Foam::atan2(diff.y(), diff.x()) - theta_.z();
-    return sqrt(1.0/(sqr(cos(theta)/a_) + sqr(sin(theta)/b_)));
+    return sqrt(1.0/(sqr(cos(theta)/(a_)) + sqr(sin(theta)/(b_))));
 }
 
 Foam::scalar Foam::particleShapes::ellipse::A(const vector& pt) const
@@ -210,8 +228,7 @@ Foam::scalar Foam::particleShapes::ellipse::A(const vector& pt) const
 
 Foam::scalar Foam::particleShapes::ellipse::V() const
 {
-    return
-        Foam::constant::mathematical::pi*a_*b_*l_/4.0;
+    return Foam::constant::mathematical::pi*a_*b_*l_;
 }
 
 
@@ -223,14 +240,9 @@ Foam::Ostream& Foam::particleShapes::ellipse::write
     const particleShape& shape
 ) const
 {
-    if (os.format() == IOstream::ASCII)
-    {
-        os  << static_cast<const particleShapes::ellipse&>(shape).d();
-    }
-    else
-    {
-        os  << static_cast<const particleShapes::ellipse&>(shape);
-    }
+    const ellipse& e = static_cast<const particleShapes::ellipse&>(shape);
+    os  << "a" << token::TAB << e.a_ << token::END_STATEMENT << nl
+        << "b" << token::TAB << e.b_ << token::END_STATEMENT << endl;
 
     // Check state of Ostream
     os.check

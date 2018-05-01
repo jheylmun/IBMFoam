@@ -1,3 +1,5 @@
+#include "readGravitationalAcceleration.H"
+
 Info<< "Reading field p\n" << endl;
 volScalarField p
 (
@@ -55,6 +57,6 @@ IOdictionary IBMProperties
     )
 );
 
-particleCloud particles(mesh, IBMProperties);
+particleCloud particles(mesh, IBMProperties, g);
 
 #include "createMRF.H"

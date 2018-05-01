@@ -78,6 +78,7 @@ Foam::particleShapes::sphere::sphere
     calcSf();
 }
 
+
 Foam::particleShapes::sphere::sphere
 (
     const particleShape& shape,
@@ -88,10 +89,18 @@ Foam::particleShapes::sphere::sphere
     particleShape(shape, center, theta),
     d_(refCast<const sphere>(shape).d_)
 {
-    discretize();
-    updateCellLists();
-    calcSf();
+    this->moveMesh(center);
 }
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::particleShapes::sphere::~sphere()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
 
 void Foam::particleShapes::sphere::calcSf()
 {
@@ -136,13 +145,6 @@ void Foam::particleShapes::sphere::calcSf()
     }
 }
 
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-Foam::particleShapes::sphere::~sphere()
-{}
-
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 void Foam::particleShapes::sphere::discretize()
 {
@@ -224,18 +226,24 @@ void Foam::particleShapes::sphere::updateCellLists()
 
     this->setNeighbours();
     this->setWeights();
-    setProcs();
 }
+
 
 Foam::scalar Foam::particleShapes::sphere::d() const
 {
     return d_;
 }
 
+Foam::vector Foam::particleShapes::sphere::D() const
+{
+    return vector(d_, d_, d_);
+}
+
 Foam::scalar Foam::particleShapes::sphere::A(const vector& pt) const
 {
     return Foam::constant::mathematical::pi*sqr(d_/2.0);
 }
+
 
 Foam::scalar Foam::particleShapes::sphere::V() const
 {
@@ -251,14 +259,8 @@ Foam::Ostream& Foam::particleShapes::sphere::write
     const particleShape& shape
 ) const
 {
-    if (os.format() == IOstream::ASCII)
-    {
-        os  << static_cast<const particleShapes::sphere&>(shape).d();
-    }
-    else
-    {
-        os  << static_cast<const particleShapes::sphere&>(shape);
-    }
+    const sphere& s = static_cast<const particleShapes::sphere&>(shape);
+    os  << "d" << token::TAB << s.d_ << token::END_STATEMENT << endl;
 
     // Check state of Ostream
     os.check

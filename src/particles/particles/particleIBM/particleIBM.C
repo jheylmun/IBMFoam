@@ -24,11 +24,186 @@ License
 #include "wallFvPatch.H"
 #include "randomDistribution.H"
 
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
 namespace Foam
 {
     defineTypeNameAndDebug(particleIBM, 0);
     defineTemplateTypeNameAndDebug(Cloud<particleIBM>, 0);
 }
+
+Foam::label Foam::particleIBM::centerOfMesh(const polyMesh& mesh)
+{
+    vector center(0.5*(max(mesh.points()) + min(mesh.points())));
+    return mesh.findNearestCell(center);
+}
+
+bool Foam::particleIBM::collision
+(
+    const particleIBM& p1,
+    const particleIBM& p2,
+    vector& collisionPt
+)
+{
+    scalar pi = Foam::constant::mathematical::pi;
+
+    vector center1 = p1.center();
+    vector center2 = p2.center();
+    vector diff = center2 - center1;
+
+    vector d1 = p1.D();
+    vector d2 = p2.D();
+    if (mag(diff) > 0.5*(cmptMax(d1) + cmptMax(d2)))
+    {
+        return false;
+    }
+    if
+    (
+        (d1.x() + d1.y() + d1.z())/3.0 == cmptMax(d1)
+     && (d2.x() + d2.y() + d2.z())/3.0 == cmptMax(d2)
+    )
+    {
+        if (0.5*(cmptMax(d1) + cmptMax(d2)) > mag(diff))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    vector pt1 = center1;
+    vector pt2 = center2;
+    tensor R1 = p1.rotationMatrix();
+    tensor R2 = p2.rotationMatrix();
+
+    scalar gamma1 = atan2(diff.y(), diff.x()) - p1.theta().z();
+    scalar gamma2 = atan2(diff.y(), diff.x()) - p2.theta().z();
+    if (center2.x() < center1.x())
+    {
+        gamma2 -= pi;
+    }
+    else
+    {
+        gamma1 -= pi;
+    }
+
+    scalar r1 = p1.r(pt2);
+    scalar r2 = p2.r(pt1);
+    scalar x1 = r1*cos(gamma1);
+    scalar x2 = r2*cos(gamma2);
+    if (tan(p1.theta().z())*tan(p2.theta().z()) < 0)
+    {
+        x1 *= -1.0;
+        x2 *= -1.0;
+    }
+
+    bool converged = false;
+    bool collision = false;
+    label itt = 0;
+
+    while (!converged)
+    {
+        itt++;
+        pt1 = (R1 & vector(x1, 0, 0)) + center1;
+        pt2 = (R2 & vector(x2, 0, 0)) + center2;
+
+        vector oldDiff = diff;
+        diff = pt2 - pt1;
+
+        scalar alpha1 = atan2(diff.y(), diff.x()) - p1.theta().z();
+        scalar alpha2 = atan2(diff.y(), diff.x()) - p2.theta().z();
+        if (center2.x() < center1.x())
+        {
+            alpha2 -= pi;
+        }
+        else
+        {
+            alpha1 -= pi;
+        }
+
+        vector rp1 = pt1;
+        vector rp1Local = rp1;
+        {
+            scalar m = tan(alpha1);
+            scalar I = -m*x1;
+            scalar a = sqr(m) + sqr(d1.y()/d1.x());
+            scalar b = 2.0*m*I;
+            scalar c = sqr(I) - sqr(d1.y());
+
+            scalar posRoot = (-b + sqrt(sqr(b) - 4.0*a*c))/(2.0*a);
+            scalar negRoot = (-b - sqrt(sqr(b) - 4.0*a*c))/(2.0*a);
+
+            vector rpPos = (R1 & vector(posRoot, I + posRoot*m, 0)) + center1;
+            vector rpNeg = (R1 & vector(negRoot, I + negRoot*m, 0)) + center1;
+
+            if (mag(rpPos - center2) < mag(rpNeg - center2))
+            {
+                rp1 = rpPos;
+                rp1Local = vector(posRoot, I + posRoot*m, 0);
+            }
+            else
+            {
+                rp1 = rpNeg;
+                rp1Local = vector(negRoot, I + negRoot*m, 0);
+            }
+            gamma1 = atan2(rp1Local.y(), rp1Local.x());
+        }
+
+        vector rp2 = pt2;
+        vector rp2Local = rp2;
+        {
+            scalar m = tan(alpha2);
+            scalar I = -m*x2;
+            scalar a = sqr(m) + sqr(d2.y()/d2.x());
+            scalar b = 2.0*m*I;
+            scalar c = sqr(I) - sqr(d2.y());
+
+            scalar posRoot = (-b + sqrt(sqr(b) - 4.0*a*c))/(2.0*a);
+            scalar negRoot = (-b - sqrt(sqr(b) - 4.0*a*c))/(2.0*a);
+
+            vector rpPos = (R2 & vector(posRoot, I + posRoot*m, 0)) + center2;
+            vector rpNeg = (R2 & vector(negRoot, I + negRoot*m, 0)) + center2;
+
+            if (mag(rpPos - center1) < mag(rpNeg - center1))
+            {
+                rp2 = rpPos;
+                rp2Local = vector(posRoot, I + posRoot*m, 0);
+            }
+            else
+            {
+                rp2 = rpNeg;
+                rp2Local = vector(negRoot, I + negRoot*m, 0);
+            }
+            gamma2 = atan2(rp2Local.y(), rp2Local.x());
+        }
+
+        r1 = mag(rp1Local);
+        r2 = mag(rp2Local);
+        x1 = r1*cos(gamma1);
+        x2 = r2*cos(gamma2);
+        if (tan(p1.theta().z())*tan(p2.theta().z()) < 0)
+        {
+            x1 *= -1.0;
+            x2 *= -1.0;
+        }
+
+        if ((diff & (rp2 - rp1)) < 0)
+        {
+            converged = true;
+            collision = true;
+            collisionPt = 0.5*(rp1 + rp2);
+        }
+
+        if (mag(oldDiff) < mag(diff) || itt > 10)
+        {
+            converged = true;
+        }
+    }
+    return collision;
+}
+
 
 // * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
 
@@ -40,7 +215,7 @@ void Foam::particleIBM::interpolateFToMesh
     volVectorField& F
 ) const
 {
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
+    if (!onMesh())
     {
         return;
     }
@@ -89,12 +264,6 @@ void Foam::particleIBM::interpolateFToMesh
 }
 
 
-Foam::vector Foam::particleIBM::v(const vector& pt) const
-{
-    return (-(pt - shape_->center_)^omega_ ) + v_;
-}
-
-
 // * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * //
 
 Foam::particleIBM::particleIBM
@@ -106,19 +275,9 @@ Foam::particleIBM::particleIBM
 :
     particle
     (
-        (mesh.findCell(dict.lookup("position")) != -1)
-      ? particle
-        (
-            mesh,
-            vector(dict.lookup("position")),
-            mesh.findCell(dict.lookup("position"))
-        )
-      : Foam::particle
-        (
-            mesh,
-            mesh.cellCentres()[mesh.findNearestCell(dict.lookup("position"))],
-            mesh.findNearestCell(dict.lookup("position"))
-        )
+        mesh,
+        mesh.cellCentres()[mesh.findNearestCell(dict.lookup("position"))],
+        mesh.findNearestCell(dict.lookup("position"))
     ),
     mesh_(mesh),
     index_(index),
@@ -138,10 +297,22 @@ Foam::particleIBM::particleIBM
     rho_(readScalar(dict.lookup("rho"))),
     age_(0.0),
     integratedForce_(Zero),
-    integratedForceOld_(Zero),
-    integratedTorque_(Zero),
-    integratedTorqueOld_(Zero)
-{}
+    integratedTorque_(Zero)
+{
+    if (mesh_.findCell(shape_->center_) != (-1))
+    {
+        active_ = 1;
+    }
+    else
+    {
+        active_ = 0;
+    }
+
+    if (active_)
+    {
+        track(shape_->center() - position(), 0);
+    }
+}
 
 
 Foam::particleIBM::particleIBM
@@ -157,14 +328,9 @@ Foam::particleIBM::particleIBM
 :
     particle
     (
-        (p.mesh_.findCell(center) != -1)
-      ? static_cast<const particle&>(p)
-      : Foam::particle
-        (
-            p.mesh_,
-            p.mesh_.cellCentres()[p.mesh_.findNearestCell(center)],
-            p.mesh_.findNearestCell(center)
-        )
+        p.mesh_,
+        p.mesh_.cellCentres()[centerOfMesh(p.mesh_)],
+        centerOfMesh(p.mesh_)
     ),
     mesh_(p.mesh_),
     index_(p.index_),
@@ -175,12 +341,12 @@ Foam::particleIBM::particleIBM
     omega_(omega),
     rho_(p.rho_),
     age_(age),
-    integratedForce_(Zero),
-    integratedForceOld_(Zero),
-    integratedTorque_(Zero),
-    integratedTorqueOld_(Zero),
+    integratedForce_(p.integratedForce_),
+    integratedTorque_(p.integratedTorque_),
     collisionForces_(p.collisionForces_.size(), Zero),
-    wallForces_(p.wallForces_.size(), Zero)
+    collisionTorques_(p.collisionTorques_.size(), Zero),
+    wallForces_(p.wallForces_.size(), Zero),
+    wallTorques_(p.wallTorques_.size(), Zero)
 {}
 
 
@@ -188,30 +354,25 @@ Foam::particleIBM::particleIBM(const particleIBM& p)
 :
     particle
     (
-        (p.mesh_.findCell(p.position()) != -1)
-      ? static_cast<const particle&>(p)
-      : Foam::particle
-        (
-            p.mesh_,
-            p.mesh_.cellCentres()[p.mesh_.findNearestCell(p.position())],
-            p.mesh_.findNearestCell(p.position())
-        )
+        p.mesh_,
+        p.mesh_.cellCentres()[centerOfMesh(p.mesh_)],
+        centerOfMesh(p.mesh_)
     ),
     mesh_(p.mesh_),
     index_(p.index_),
     copy_(p.copy_),
     active_(false),
-    shape_(particleShape::New(p.shape_(), p.center(), p.theta())),
+    shape_(),//particleShape::New(p.shape_(), p.center(), p.theta())),
     v_(p.v_),
     omega_(p.omega_),
     rho_(p.rho_),
     age_(p.age_),
     integratedForce_(p.integratedForce_),
-    integratedForceOld_(p.integratedForceOld_),
     integratedTorque_(p.integratedTorque_),
-    integratedTorqueOld_(p.integratedTorqueOld_),
     collisionForces_(p.collisionForces_.size(), Zero),
-    wallForces_(p.wallForces_.size(), Zero)
+    collisionTorques_(p.collisionTorques_.size(), Zero),
+    wallForces_(p.wallForces_.size(), Zero),
+    wallTorques_(p.wallTorques_.size(), Zero)
 {}
 
 
@@ -223,9 +384,16 @@ Foam::particleIBM::~particleIBM()
 
 // * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
 
+Foam::vector Foam::particleIBM::v(const vector& pt) const
+{
+    return (-(pt - shape_->center_)^omega_ ) + v_;
+}
+
+
 void Foam::particleIBM::solve
 (
     const scalar& dt,
+    const vector& g,
     const bool moving,
     const bool rotation
 )
@@ -237,24 +405,48 @@ void Foam::particleIBM::solve
 
     if (moving)
     {
-        vector Fc = sum(collisionForces_);
-        vector Fw = sum(wallForces_);
-        integratedForce_ += Fc + Fw;
+        vector F =
+            integratedForce_
+          + sum(collisionForces_)
+          + sum(wallForces_);
 
-        v_ += dt*integratedForce_/mass();
+        v_ += dt*(F/mass() + g) ;
         vector dx = dt*v_;
         shape_->center_ += dx;
+
+        if (mesh_.findCell(shape_->center_) != (-1))
+        {
+            active_ = 1;
+        }
+        else
+        {
+            active_ = 0;
+        }
+
+        if (active_)
+        {
+            track(shape_->center() - position(), 0);
+        }
     }
 
     if (rotation)
     {
-        omega_ += dt*integratedTorque_/(mass()*shape_->I());
+        vector T =
+            integratedTorque_
+          + sum(collisionTorques_)
+          + sum(wallTorques_);
+
+        omega_ += dt*T/(mass()*shape_->I());
         shape_->theta() += omega_*dt;
+
+        scalar twoPi = constant::mathematical::twoPi;
+        if (shape_->theta().z() < 0) shape_->theta().z() += twoPi;
+        if (shape_->theta().z() >= twoPi) shape_->theta().z() -= twoPi;
     }
-    integratedForce_ = integratedForceOld_;
-    integratedTorque_ = integratedTorqueOld_;
     collisionForces_ = Zero;
+    collisionTorques_ = Zero;
     wallForces_ = Zero;
+    wallTorques_ = Zero;
 }
 
 
@@ -277,14 +469,17 @@ void Foam::particleIBM::wallHit
             mesh.Sf().boundaryField()[patchi][facei]
             /mesh.magSf().boundaryField()[patchi][facei];
 
+        vector rv = v(faceCentre);
+
         vector R = center() - faceCentre;
-        scalar magR = mag(R);
-        vector normR = R/magR;
-        if (magR <= r(faceCentre) && (v_ & norm) > 0)
+        if (mag(R) <= r(faceCentre) && (rv & norm) > 0)
         {
-            vector vNorm = norm*(norm & v_);
-            wallForces_[patchi] = -2.0*mass()*(vNorm & normR)*normR/dt;
-//                     integratedTorque_ += normalForce_ ^ R;
+            vector vNorm = norm*(norm & rv);
+
+            vector rHat = R/mag(R);
+            vector F = -2.0*mass()*vNorm/dt;
+            wallForces_[patchi] = (F & rHat)*rHat;
+            wallTorques_[patchi] = (F - wallForces_[patchi])^R;
 
             // Only calculate one hit per patch
             return;
@@ -357,8 +552,8 @@ void Foam::particleIBM::integrateSurfaceStress
     tmp<vectorField> tmpSf(shape_->Sf());
     const vectorField& Sf = tmpSf();
 
-    integratedForceOld_ = Zero;
-    integratedTorqueOld_ = Zero;
+    integratedForce_ = Zero;
+    integratedTorque_ = Zero;
 
     for (label i = 0; i < shape_->nTheta(); i++)
     {
@@ -379,15 +574,11 @@ void Foam::particleIBM::integrateSurfaceStress
             vector Fn = (F & norm)*norm;
             vector Ft = F - Fn;
 
-            integratedForceOld_ += F;
-            integratedTorqueOld_ -= Ft^R;
+            integratedForce_ += F;
+            integratedTorque_ -= Ft^R;
         }
     }
-
-    integratedForce_ = integratedForceOld_;
-    integratedTorque_ = integratedTorqueOld_;
 }
-
 
 Foam::scalar Foam::particleIBM::Cd
 (
@@ -413,7 +604,7 @@ void Foam::particleIBM::update()
     shape_->moveMesh(shape_->center_);
     shape_->updateCellLists();
 
-    if (shape_->centerOnMesh())
+    if (mesh_.findCell(shape_->center_) != (-1))
     {
         active_ = 1;
     }
@@ -424,6 +615,6 @@ void Foam::particleIBM::update()
 
     if (active_)
     {
-        track(shape_->center() - position(), 1.0);
+        track(shape_->center() - position(), 0);
     }
 }

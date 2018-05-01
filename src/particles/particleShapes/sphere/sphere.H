@@ -100,6 +100,9 @@ public:
         //- Particle diameter
         virtual scalar d() const;
 
+        //- Tensor of diameters
+        virtual vector D() const;
+
         //- Surface area
         virtual scalar A(const vector& pt) const;
 

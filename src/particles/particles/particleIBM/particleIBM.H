@@ -49,6 +49,7 @@ SourceFiles
 #include "particle.H"
 #include "particleShape.H"
 #include "interpolation.H"
+#include "boundBox.H"
 
 
 namespace Foam
@@ -103,20 +104,20 @@ protected:
     //- Total force acting on the particle
     vector integratedForce_;
 
-    //- Total force acting on the particle at the start of sub-time steps
-    vector integratedForceOld_;
-
     //- Total torque actig on particle surface
     vector integratedTorque_;
-
-    //- Total torque actig on particle surface at the start of sub-time steps
-    vector integratedTorqueOld_;
 
     //- Force due to particle-particle and wall collisions
     vectorField collisionForces_;
 
+    //- Torques due to particle-particle and wall collisions
+    vectorField collisionTorques_;
+
     //- Forces due to particle-wall collisions
     vectorField wallForces_;
+
+    //- Torques due to particle-wall collisions
+    vectorField wallTorques_;
 
     //- Are fields combined over procs
     bool updatedForce_;
@@ -141,8 +142,8 @@ protected:
             volVectorField& F
         ) const;
 
-        //- Return the surface velocity given a point from the centered mesh
-        vector v(const vector& pt) const;
+        //- Return the center point on the mesh
+        static label centerOfMesh(const polyMesh& mesh);
 
 
 public:
@@ -199,15 +200,12 @@ public:
         //- Is any part of the particle on the mesh
         inline bool onMesh() const;
 
-        //- Is the particle on a single processor
-        inline bool singleProc() const;
-
-        //- Is the center of the particle on the mesh
-        inline bool centerOnMesh() const;
-
         //- Is the particle active?
         inline bool active() const;
         inline bool& active();
+
+        //- Particle distance of influence
+        inline const scalar& delta() const;
 
         //- Center of particle
         //  Different from position of particle class so center of particle can
@@ -227,6 +225,12 @@ public:
         //- return effective diameter
         inline scalar d() const;
 
+        //- return effective diameter
+        inline vector D() const;
+
+        //- Return the rotation matrix
+        inline const tensor& rotationMatrix() const;
+
         //- Return the particle mass
         inline scalar mass() const;
 
@@ -235,6 +239,9 @@ public:
 
         //- Non-constant access to linear velocity
         inline vector& v();
+
+        //- Return the surface velocity given a point
+        vector v(const vector& pt) const;
 
         //- Const access to angular velocity
         inline const vector& omega() const;
@@ -266,20 +273,29 @@ public:
         //- Non-const ref to collision force acting on particle
         inline vectorField& Fc();
 
+        //- Return collision torque acting on particle
+        inline const vectorField& Tc() const;
+
+        //- Non-const ref to collision torque acting on particle
+        inline vectorField& Tc();
+
         //- Return wall collision force acting on particle
         inline const vectorField& Fw() const;
 
         //- Non-const ref to wall collision force acting on particle
         inline vectorField& Fw();
 
+        //- Return wall collision torque acting on particle
+        inline const vectorField& Tw() const;
+
+        //- Non-const ref wall to collision torque acting on particle
+        inline vectorField& Tw();
+
         //- Set the number of collisions possible
         inline void setCollisions(const label nParticles, const label nWalls);
 
         //- Return the age of the particle
         inline const scalar& age() const;
-
-        //- Return the age of the particle
-        inline scalar& age();
 
         //- Is the force updated
         inline bool updatedForce() const;
@@ -293,16 +309,7 @@ public:
         inline void resetUpdate();
 
 
-    //- Mpi data access
-
-        //- Center processor
-        inline label centerProc() const;
-
-        //- List of shared processors const;
-        inline const boolList& neiProcs() const;
-
-
-    // Edit
+    // Public functions
 
         //- Calcluate needed forcing on fluid
         void forcing
@@ -312,6 +319,28 @@ public:
             const surfaceVectorField& Sf,
             volVectorField& F
         ) const;
+
+        //- Is there a collision between two particles
+        static bool collision
+        (
+            const particleIBM& p1,
+            const particleIBM& p2,
+            vector& pt
+        );
+
+        //- Return the neighbour face if on cyclicPatch
+        label patchHit
+        (
+            const fvMesh& mesh,
+            const label patchi,
+            vector& R
+        ) const;
+
+        //- Calculate and return the drag coefficient
+        scalar Cd(const scalar& rhoRef, const vector& UInf) const;
+
+
+    //- Edit
 
         //- Calculate total stress on particle surface
         void integrateSurfaceStress
@@ -324,23 +353,18 @@ public:
         void solve
         (
             const scalar& dt,
+            const vector& g,
             const bool moving,
             const bool rotating
         );
 
         //- Compute wall hits
-        void wallHit(const fvMesh& mesh, const scalar& dt, const label patchi);
-
-        //- Return the neighbour face if on cyclicPatch
-        label patchHit
+        void wallHit
         (
             const fvMesh& mesh,
-            const label patchi,
-            vector& R
-        ) const;
-
-        //- Calculate and return the drag coefficient
-        scalar Cd(const scalar& rhoRef, const vector& UInf) const;
+            const scalar& dt,
+            const label patchi
+        );
 
         //- Update weights, cell lists, and mesh
         void update();

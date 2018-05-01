@@ -19,82 +19,62 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
+#include "uniformDistribution.H"
+#include "addToRunTimeSelectionTable.H"
 
-// * * * * * * * * * * * * * * * Public Functions  * * * * * * * * * * * * * //
 
-Foam::particleShape::locationType Foam::particleShape::onMesh() const
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+namespace Foam
 {
-    return onMesh_;
+namespace randomDistributions
+{
+    defineTypeNameAndDebug(uniform, 0);
+
+    addToRunTimeSelectionTable
+    (
+        randomDistribution,
+        uniform,
+        dictionary
+    );
+}
 }
 
-const Foam::vectorList& Foam::particleShape::mesh() const
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+Foam::randomDistributions::uniform::uniform
+(
+    const dictionary& dict
+)
+:
+    randomDistribution(dict)
+{}
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::randomDistributions::uniform::~uniform()
+{}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+Foam::scalar Foam::randomDistributions::uniform::RV(Random& rv)
 {
-    return baseMesh_;
+    return minVal_ + rv.scalar01()*(maxVal_ - minVal_);
 }
 
-Foam::tmp<Foam::vectorField> Foam::particleShape::Sf() const
+Foam::scalar Foam::randomDistributions::uniform::moment(const label i) const
 {
-    return rotationMatrix_ & Sf_;
+    NotImplemented;
+    return 1.0;
 }
 
-const Foam::scalar& Foam::particleShape::delta() const
+Foam::scalar Foam::randomDistributions::uniform::moment(const scalar i) const
 {
-    return delta_;
-}
-
-Foam::label Foam::particleShape::N() const
-{
-    return N_;
-}
-
-Foam::label Foam::particleShape::nRadial() const
-{
-    return nRadial_;
-}
-
-Foam::label Foam::particleShape::nTheta() const
-{
-    return nTheta_;
-}
-
-Foam::label Foam::particleShape::nk() const
-{
-    return nk_;
-}
-
-const Foam::labelList& Foam::particleShape::shellCells() const
-{
-    return shellCells_;
-}
-
-const Foam::vector& Foam::particleShape::theta() const
-{
-    return theta_;
-}
-
-Foam::vector& Foam::particleShape::theta()
-{
-    return theta_;
-}
-
-const Foam::scalar& Foam::particleShape::I() const
-{
-    return momentOfInertia_;
-}
-
-const Foam::vector& Foam::particleShape::center() const
-{
-    return center_;
-}
-
-Foam::vector& Foam::particleShape::center()
-{
-    return center_;
-}
-
-const Foam::tensor& Foam::particleShape::rotationMatrix() const
-{
-    return rotationMatrix_;
+    NotImplemented;
+    return 1.0;
 }
 
 // ************************************************************************* //

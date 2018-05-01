@@ -30,7 +30,7 @@ void Foam::particleIBM::interpolateFromMesh
     fType& field
 ) const
 {
-    if (shape_->centerProc_ == -1 && shape_->singleProc())
+    if (!onMesh())
     {
         return;
     }

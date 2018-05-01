@@ -44,4 +44,27 @@ bool Foam::particleCloud::writeObject
     return cloud::writeObject(fmt, ver, cmp, this->size());
 }
 
+void Foam::particleCloud::readParticles()
+{
+    refCast<Cloud<particleIBM>>(*this).clear();
+    IOPosition<Cloud<particleIBM>> ioP(*this);
+
+    bool valid = ioP.headerOk();
+    bool checkClass = false;
+    Istream& is = ioP.readStream(checkClass ? typeName : "", valid);
+    if (valid)
+    {
+        ioP.readData(is, *this);
+        ioP.close();
+
+        particleIBM::readFields(refCast<Cloud<particleIBM>>(*this));
+    }
+
+    if (!valid && debug)
+    {
+        Pout<< "Cannot read particle positions file:" << nl
+            << "    " << ioP.objectPath() << nl
+            << "Assuming the initial cloud contains 0 particles." << endl;
+    }
+}
 // ************************************************************************* //

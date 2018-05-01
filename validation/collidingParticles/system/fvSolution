@@ -22,7 +22,7 @@ solvers
         solver          GAMG;
         smoother        DIC;
         preconditioner  DIC;
-        tolerance       1e-10;
+        tolerance       1e-8;
         relTol          0.1;
     }
     pFinal
@@ -33,10 +33,10 @@ solvers
 
     U
     {
-        solver          PBiCGStab;
-        preconditioner  DILU
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
         tolerance       1e-5;
-        relTol          0.01;
+        relTol          0.1;
     }
 
     UFinal
@@ -49,13 +49,13 @@ solvers
 PIMPLE
 {
     nNonOrthogonalCorrectors 0;
-    nOuterCorrectors         1;
+    nOuterCorrectors         5;
     nCorrectors     2;
     pRefCell        0;
     pRefValue       0;
     pressureCorrection true;
 
-    outerCorrectorResidualControl
+    residualControl
     {
         p
         {
@@ -65,19 +65,6 @@ PIMPLE
     }
 }
 
-SIMPLE
-{
-    nNonOrthogonalCorrectors 1;
-    pRefCell        0;
-    pRefValue       0;
-    pressureCorrection true;
-
-    residualControl
-    {
-        p 1e-6;
-        U 1e-6;
-    }
-}
 
 
 relaxationFactors
@@ -88,7 +75,7 @@ relaxationFactors
     }
     equations
     {
-        U               0.7;
+        U               0.3;
     }
 }
 

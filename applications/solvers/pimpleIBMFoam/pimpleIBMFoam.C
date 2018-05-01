@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
     {
         #include "readTimeControls.H"
         #include "CourantNo.H"
+        CoNum = max(CoNum, particles.maxCoNum());
         #include "setDeltaT.H"
 
         runTime++;

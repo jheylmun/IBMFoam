@@ -62,8 +62,7 @@ public:
     enum locationType
     {
         OFF_MESH,
-        PARTIAL_WITH_CENTER,
-        PARTIAL_WITHOUT_CENTER,
+        PARTIAL,
         ON_MESH
     };
 
@@ -126,9 +125,6 @@ protected:
     //- Surface normal vector time surface area
     vectorField Sf_;
 
-    //- Cell containing center of shape
-    label centerIndex_;
-
     //- List of cells within the particles shells
     mutable labelList shellCells_;
 
@@ -157,15 +153,6 @@ protected:
 
     //- Total weighting parameters for interpolation to global mesh
     mutable scalarList WFromLocal_;
-
-
-    // Mpi data
-
-        //- processor id at center
-        label centerProc_;
-
-        //- Processors used in interpolation of surface mesh
-        boolList neiProcs_;
 
 
     // Protected member fuctions
@@ -288,12 +275,6 @@ public:
         //- Is the shape on the mesh
         inline locationType onMesh() const;
 
-        //- Is the center point on the mesh
-        inline bool centerOnMesh() const;
-
-        //- Is the particle on a single processor
-        inline bool singleProc() const;
-
         //- Return structured mesh
         inline const vectorList& mesh() const;
 
@@ -315,9 +296,6 @@ public:
         //- Return number of points in k or phi direction
         inline label nk() const;
 
-        //- Return index containing cell at center of shape
-        inline label centerIndex() const;
-
         //- Return cell in the shell of the surface mesh
         inline const labelList& shellCells() const;
 
@@ -329,6 +307,9 @@ public:
 
         //- Particle diameter, or equivelant diameter
         virtual scalar d() const = 0;
+
+        //- Tensor of diameters
+        virtual vector D() const = 0;
 
         //- Frontal Area
         virtual scalar A(const vector& pt) const = 0;
@@ -347,6 +328,9 @@ public:
 
         //- Return the radius give a position of another particle
         virtual scalar r(const vector& x2) const = 0;
+
+        //- Return the rotation matrix
+        inline const tensor& rotationMatrix() const;
 
 
     // Edit functions
