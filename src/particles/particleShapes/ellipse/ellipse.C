@@ -151,13 +151,13 @@ void Foam::particleShapes::ellipse::updateCellLists()
     if (theta_.z() < 0) theta_.z() += twoPi;
     if (theta_.z() > twoPi) theta_.z() -= twoPi;
 
-    shellCells_ = labelList(mesh_.nCells(), -1);
-    neighbourPoints_ = List<labelVector>(mesh_.nCells(), Zero);
+    shellCells_ = labelList(pMesh_.nCells(), -1);
+    neighbourPoints_ = List<labelVector>(pMesh_.nCells(), Zero);
 
     label i = 0;
-    forAll(mesh_.cellCentres(), celli)
+    forAll(pMesh_.cellCentres(), celli)
     {
-        const vector& CC = mesh_.cellCentres()[celli];
+        const vector& CC = pMesh_.cellCentres()[celli];
         vector diff = CC - center_;
 
         scalar radius = mag(diff);

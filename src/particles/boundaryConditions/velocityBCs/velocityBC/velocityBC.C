@@ -19,34 +19,55 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 \*---------------------------------------------------------------------------*/
 
-#include "particleIBM.H"
+#include "velocityBC.H"
 
-// * * * * * * * * * * * * * Private Member Functions * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-template<class sType, class fType>
-void Foam::particleIBM::interpolateFromMesh
-(
-    const sType& fieldF,
-    fType& field
-) const
+namespace Foam
 {
-    if (!onMesh())
-    {
-        return;
-    }
-
-    const List<scalarList>& ws = shape_->wToLocal_;
-    const scalarList& W = shape_->WToLocal_;
-    const List<labelList>& facesList = shape_->facesToLocal_;
-
-    forAll(shape_->mesh_, pti)
-    {
-        const labelList& faces = facesList[pti];
-        forAll(faces, facei)
-        {
-            field[pti] += ws[pti][facei]/W[pti]*fieldF[faces[facei]];
-        }
-    }
+    defineTypeNameAndDebug(velocityBC, 0);
+    defineRunTimeSelectionTable(velocityBC, dictionary);
+    defineRunTimeSelectionTable(velocityBC, copy);
 }
+
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+Foam::velocityBC::velocityBC
+(
+    const dictionary& dict,
+    const vectorList& mesh,
+    const labelList& shellCells,
+    const List<labelList>& Is,
+    const List<labelList>& Os,
+    const List<scalarList>& ws,
+    const scalarList& Ws
+)
+:
+    mesh_(mesh),
+    shellCells_(shellCells),
+    Is_(Is),
+    Os_(Os),
+    ws_(ws),
+    Ws_(Ws)
+{}
+
+
+Foam::velocityBC::velocityBC(const velocityBC& bc)
+:
+    mesh_(bc.mesh_),
+    shellCells_(bc.shellCells_),
+    Is_(bc.Is_),
+    Os_(bc.Os_),
+    ws_(bc.ws_),
+    Ws_(bc.Ws_)
+{}
+
+
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
+
+Foam::velocityBC::~velocityBC()
+{}
+
 
 // ************************************************************************* //

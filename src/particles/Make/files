@@ -7,4 +7,8 @@ particleShapes/sphere/sphere.C
 particles/particleIBM/particleIBM.C
 particles/particleIBM/particleIBMIO.C
 
+boundaryConditions/velocityBCs/velocityBC/velocityBC.C
+boundaryConditions/velocityBCs/velocityBC/velocityBCNew.C
+boundaryConditions/velocityBCs/noSlipBC/noSlipBC.C
+
 LIB = $(FOAM_USER_LIBBIN)/libparticleIBM

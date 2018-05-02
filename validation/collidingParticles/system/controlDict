@@ -17,13 +17,13 @@ FoamFile
 
 application     pimleIBMFoam;
 
-startFrom       latestTime;
+startFrom       startTime;
 
 startTime       0;
 
 stopAt          endTime;
 
-endTime         2;
+endTime         10;
 
 deltaT          1e-4;
 

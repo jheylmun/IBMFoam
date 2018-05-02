@@ -97,5 +97,10 @@ void Foam::stationaryParticleIBM<pType>::solve
 
 void Foam::stationaryParticleIBM<pType>::update()
 {
-    return;
+    // Update mesh if rotating
+    if (omega() != Zero)
+    {
+        shape_->moveMesh(shape_->center_);
+        shape_->updateCellLists();
+    }
 }

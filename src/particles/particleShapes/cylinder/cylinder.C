@@ -153,13 +153,13 @@ void Foam::particleShapes::cylinder::updateCellLists()
     scalar innerR = R - delta_;
     scalar twoPi = constant::mathematical::twoPi;
 
-    shellCells_ = labelList(mesh_.nCells(), -1);
-    neighbourPoints_ = List<labelVector>(mesh_.nCells(), Zero);
+    shellCells_ = labelList(pMesh_.nCells(), -1);
+    neighbourPoints_ = List<labelVector>(pMesh_.nCells(), Zero);
 
     label i = 0;
-    forAll(mesh_.cellCentres(), celli)
+    forAll(pMesh_.cellCentres(), celli)
     {
-        vector diff = mesh_.cellCentres()[celli] - center_;
+        vector diff = pMesh_.cellCentres()[celli] - center_;
 
         scalar r = mag(diff);
 

@@ -26,7 +26,7 @@ License
 template<class pType>
 Foam::vector Foam::rotatingParticleIBM<pType>::v(const vector& pt) const
 {
-    return (-(pt - shape_->center_)^omega_ ) + v();
+    return ((shape_->center_ - pt)^omega_ ) + pType::v(pt);
 }
 
 
@@ -88,6 +88,8 @@ void Foam::rotatingParticleIBM<pType>::solve
     const scalar& dt
 )
 {
+    pType::solve(dt);
+
     vector T =
         integratedTorque_
       + sum(collisionTorques_)
@@ -104,6 +106,5 @@ void Foam::rotatingParticleIBM<pType>::solve
 template<class pType>
 void Foam::rotatingParticleIBM::update()
 {
-    shape_->moveMesh(shape_->center_);
-    shape_->updateCellLists();
+    pType::update();
 }

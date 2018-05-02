@@ -239,11 +239,11 @@ void Foam::particleIBM::interpolateFToMesh
                 ws[celli][pti]/W[celli]
                *(
                     (
-                        v(shape_->baseMesh_[Os[celli][pti]])
+                        v(shape_->mesh_[Os[celli][pti]])
                       - U[Os[celli][pti]]
                       - Uold[Is[celli][pti]]
                     )/dT
-                  + S[Is[celli][pti]]
+                  + S[Os[celli][pti]]
                 );
         }
         for(label pti = 4; pti < 8; pti++)
@@ -253,7 +253,7 @@ void Foam::particleIBM::interpolateFToMesh
                 ws[celli][pti]/W[celli]
                *(
                     (
-                        v(shape_->baseMesh_[Is[celli][pti]])
+                        v(shape_->mesh_[Is[celli][pti]])
                       - Uold[Is[celli][pti]]
                     )/dT
                   + S[Is[celli][pti]]
@@ -560,7 +560,7 @@ void Foam::particleIBM::integrateSurfaceStress
         for (label k = 0; k < shape_->nk(); k++)
         {
             vector R =
-                shape_->baseMesh_[shape_->index2(i,k)] - shape_->center_;
+                shape_->mesh_[shape_->index2(i,k)] - shape_->center_;
 
             const vector& Sfi = Sf[shape_->index2(i,k)];
             scalar magSf = mag(Sfi);

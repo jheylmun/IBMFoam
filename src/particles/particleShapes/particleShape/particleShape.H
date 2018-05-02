@@ -83,7 +83,7 @@ protected:
     friend particleIBM;
 
     //- fvMesh
-    const polyMesh& mesh_;
+    const polyMesh& pMesh_;
 
     //- Is the particle on the mesh
     locationType onMesh_;
@@ -117,7 +117,7 @@ protected:
     vectorField centeredMesh_;
 
     //- Base mesh since particles do not deform
-    vectorField baseMesh_;
+    vectorField mesh_;
 
     //- Rotation matrix
     tensor rotationMatrix_;

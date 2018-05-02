@@ -35,23 +35,23 @@ namespace Foam
 
 void Foam::particleShape::setWeights()
 {
-    // Total number of global mesh faces
-    label nFaces = mesh_.nInternalFaces();
+        // Total number of global mesh faces
+    label nFaces = pMesh_.nInternalFaces();
 
     label nPtsOnMesh = 0;
-    forAll(baseMesh_, pti)
+    forAll(mesh_, pti)
     {
-        vector pt = baseMesh_[pti];
-        label celli = mesh_.findCell(pt);
+        vector pt = mesh_[pti];
+        label celli = pMesh_.findCell(pt);
 
         if (celli != -1)
         {
-            const labelList& cellFaces = mesh_.cells()[celli];
+            const labelList& cellFaces = pMesh_.cells()[celli];
 
             //- Local copies of weights and faces
             scalar W = 0.0;
             scalarList w(20, 0.0);
-            labelList faces(mesh_.nFaces(), -1);
+            labelList faces(pMesh_.nFaces(), -1);
 
             label wi = 0;
             forAll(cellFaces, facei)
@@ -63,7 +63,7 @@ void Foam::particleShape::setWeights()
                 scalar diff =
                     mag
                     (
-                        mesh_.faceCentres()[cellFaces[facei]] - pt
+                        pMesh_.faceCentres()[cellFaces[facei]] - pt
                     );
 
                 if (diff < SMALL)
@@ -94,11 +94,11 @@ void Foam::particleShape::setWeights()
     wFromLocal_ = List<scalarList>(shellCells_.size());
     WFromLocal_ = scalarList(shellCells_.size());
 
-    if (nPtsOnMesh == 0 && mesh_.findCell(center_) == -1)
+    if (nPtsOnMesh == 0 && pMesh_.findCell(center_) == -1)
     {
         onMesh_ = OFF_MESH;
     }
-    else if (nPtsOnMesh == baseMesh_.size())
+    else if (nPtsOnMesh == mesh_.size())
     {
         onMesh_ = ON_MESH;
     }
@@ -110,14 +110,14 @@ void Foam::particleShape::setWeights()
     forAll(shellCells_, celli)
     {
         label i = shellCells_[celli];
-        vector CC = mesh_.cellCentres()[i];
+        vector CC = pMesh_.cellCentres()[i];
 
         scalar W = 0.0;
         scalarList w(8,0.0);
 
         forAll(w, pti)
         {
-            scalar diff = Foam::mag(CC - baseMesh_[Is_[celli][pti]]);
+            scalar diff = Foam::mag(CC - mesh_[Is_[celli][pti]]);
             if (diff < SMALL)
             {
                 w = 0.0;
@@ -233,7 +233,7 @@ Foam::particleShape::particleShape
     const vector& center
 )
 :
-    mesh_(mesh),
+    pMesh_(mesh),
     onMesh_(ON_MESH),
     center_(center),
     momentOfInertia_(HUGE),
@@ -243,7 +243,7 @@ Foam::particleShape::particleShape
     theta_(dict.lookupOrDefault<vector>("theta", Zero)),
     delta_(readScalar(dict.lookup("delta"))),
     centeredMesh_(N_, Zero),
-    baseMesh_(N_,Zero),
+    mesh_(N_,Zero),
     Sf_(nTheta_*nk_,Zero),
     neighbourPoints_(N_),
     wToLocal_(N_),
@@ -259,7 +259,7 @@ Foam::particleShape::particleShape
     const vector& theta
 )
 :
-    mesh_(shape.mesh_),
+    pMesh_(shape.pMesh_),
     onMesh_(PARTIAL),
     center_(center),
     momentOfInertia_(shape.momentOfInertia_),
@@ -269,7 +269,7 @@ Foam::particleShape::particleShape
     theta_(theta),
     delta_(shape.delta_),
     centeredMesh_(shape.centeredMesh_),
-    baseMesh_(N_, Zero),
+    mesh_(N_, Zero),
     Sf_(shape.Sf_),
     neighbourPoints_(N_),
     wToLocal_(N_),
@@ -290,11 +290,11 @@ void Foam::particleShape::moveMesh(const vector& center)
     center_ = center;
     setRotationMatrix();
 
-    baseMesh_ = rotate();
+    mesh_ = rotate();
 
-    forAll(baseMesh_, celli)
+    forAll(mesh_, celli)
     {
-        baseMesh_[celli] += center_;
+        mesh_[celli] += center_;
     }
 }
 

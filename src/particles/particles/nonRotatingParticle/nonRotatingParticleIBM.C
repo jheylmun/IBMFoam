@@ -26,7 +26,7 @@ License
 template<class pType>
 Foam::vector Foam::nonRotatingParticleIBM<pType>::v(const vector& pt) const
 {
-    return (-(pt - shape_->center_)^omega_ ) + v();
+    return pType::v(pt);
 }
 
 
@@ -85,10 +85,12 @@ void Foam::nonRotatingParticleIBM<pType>::solve
     const scalar& dt
 )
 {
-    return;
+    pType::solve(dt);
 }
 
 
 template<class pType>
 void Foam::nonRotatingParticleIBM::update()
-{}
+{
+    pType::update();
+}

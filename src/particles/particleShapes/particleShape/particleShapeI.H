@@ -29,7 +29,7 @@ Foam::particleShape::locationType Foam::particleShape::onMesh() const
 
 const Foam::vectorList& Foam::particleShape::mesh() const
 {
-    return baseMesh_;
+    return mesh_;
 }
 
 Foam::tmp<Foam::vectorField> Foam::particleShape::Sf() const
