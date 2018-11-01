@@ -121,6 +121,8 @@ class particleCloud
         //- Maximum copy number
         labelList maxCopies_;
 
+        //- Indicator function
+        volScalarField I_;
 
         // Collision variables
 
@@ -167,6 +169,9 @@ class particleCloud
 
         //- Delete particles no longer on mesh
         void deleteInActiveParticles();
+
+        //- Update the indicator function field
+        void updateI();
 
 
     // Combine fields ops

@@ -35,7 +35,7 @@ namespace Foam
 
 void Foam::particleShape::setWeights()
 {
-        // Total number of global mesh faces
+    // Total number of global mesh faces
     label nFaces = pMesh_.nInternalFaces();
 
     label nPtsOnMesh = 0;
@@ -137,7 +137,6 @@ void Foam::particleShape::setNeighbours()
 {
     Is_ = List<labelList>(shellCells_.size(), labelList(8, 0));
     Os_ = List<labelList>(shellCells_.size(), labelList(4, 0));
-
     forAll(shellCells_, celli)
     {
         label j = neighbourPoints_[celli].y();
@@ -230,10 +229,12 @@ Foam::particleShape::particleShape
 (
     const polyMesh& mesh,
     const dictionary& dict,
-    const vector& center
+    const vector& center,
+    const bool buildMesh
 )
 :
     pMesh_(mesh),
+    buildMesh_(buildMesh),
     onMesh_(ON_MESH),
     center_(center),
     momentOfInertia_(HUGE),
@@ -256,10 +257,12 @@ Foam::particleShape::particleShape
 (
     const particleShape& shape,
     const vector& center,
-    const vector& theta
+    const vector& theta,
+    const bool buildMesh
 )
 :
     pMesh_(shape.pMesh_),
+    buildMesh_(buildMesh),
     onMesh_(PARTIAL),
     center_(center),
     momentOfInertia_(shape.momentOfInertia_),

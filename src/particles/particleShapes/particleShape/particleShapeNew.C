@@ -28,7 +28,8 @@ Foam::autoPtr<Foam::particleShape> Foam::particleShape::New
 (
     const polyMesh& mesh,
     const dictionary& dict,
-    const vector& center
+    const vector& center,
+    const bool buildMesh
 )
 {
     const word modelType(dict.lookup("particleShape"));
@@ -49,7 +50,7 @@ Foam::autoPtr<Foam::particleShape> Foam::particleShape::New
     }
 
     return autoPtr<particleShape>
-        (cstrIter()(mesh, dict, center));
+        (cstrIter()(mesh, dict, center, buildMesh));
 }
 
 
@@ -57,7 +58,8 @@ Foam::autoPtr<Foam::particleShape> Foam::particleShape::New
 (
     const particleShape& shape,
     const vector& center,
-    const vector& theta
+    const vector& theta,
+    const bool buildMesh
 )
 {
     const word modelType(shape.type());
@@ -76,7 +78,7 @@ Foam::autoPtr<Foam::particleShape> Foam::particleShape::New
     }
 
     return autoPtr<particleShape>
-        (cstrIter()(shape, center, theta));
+        (cstrIter()(shape, center, theta, buildMesh));
 }
 
 

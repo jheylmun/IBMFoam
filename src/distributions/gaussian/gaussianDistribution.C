@@ -65,7 +65,7 @@ Foam::randomDistributions::gaussian::~gaussian()
 
 Foam::scalar Foam::randomDistributions::gaussian::RV(Random& rv)
 {
-    return rv.GaussNormal()*variance_ + mean_;
+    return rv.scalarNormal()*variance_ + mean_;
 }
 
 Foam::scalar Foam::randomDistributions::gaussian::moment(const label i) const

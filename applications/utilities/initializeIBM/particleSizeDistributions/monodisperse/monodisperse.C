@@ -104,7 +104,7 @@ Foam::IBM::monodisperse::monodisperse
         {
             pShapes_.append
             (
-                particleShape::New(mesh_, pDict, Zero).ptr()
+                particleShape::New(mesh_, pDict, Zero, false).ptr()
             );
         }
     }
@@ -141,7 +141,6 @@ bool Foam::IBM::monodisperse::writeParticles(Ostream& os)
             vector pos = Zero;
 
             bool validPos = false;
-
             while (!validPos)
             {
                 validPos = true;
@@ -158,8 +157,7 @@ bool Foam::IBM::monodisperse::writeParticles(Ostream& os)
                 {
                     pos.z() = 0.5*(bb_.min().z() + bb_.max().z());
                 }
-                pShapes_[particlei].moveMesh(pos);
-                pShapes_[particlei].updateCellLists();
+                pShapes_[particlei].center() = pos;
 
                 for (label i = 0; i < particlei; i++)
                 {
@@ -172,7 +170,7 @@ bool Foam::IBM::monodisperse::writeParticles(Ostream& os)
                               + pShapes_[i].r(pos)
                             )
                         )
-                     || pShapes_[particlei].onMesh() != particleShape::ON_MESH
+                     || this->mesh_.findCell(pos) == -1
                     )
                     {
                         validPos = false;
@@ -199,7 +197,6 @@ bool Foam::IBM::monodisperse::writeParticles(Ostream& os)
                 << "delta" << token::TAB
                 << readScalar(pDict.lookup("delta")) << token::END_STATEMENT << nl;
 
-
             Switch randRho = pDict.lookupOrDefault("randomRho", false);
             scalar rhoInit = pDict.lookupOrDefault("rho", 0.0);
             if (randRho)
@@ -217,7 +214,7 @@ bool Foam::IBM::monodisperse::writeParticles(Ostream& os)
             os  << "rho" << token::TAB
                 << rhoInit << token::END_STATEMENT << nl;
 
-            Switch randTheta = pDict.lookupOrDefault("randomTheta", false);
+                Switch randTheta = pDict.lookupOrDefault("randomTheta", false);
             vector thetaInit = pDict.lookupOrDefault<vector>("theta", Zero);
             if (randTheta)
             {

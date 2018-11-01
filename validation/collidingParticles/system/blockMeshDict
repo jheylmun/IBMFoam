@@ -16,12 +16,12 @@ FoamFile
 
 convertToMeters 0.1;
 
-D           1.0;
+D           0.04;
 ptsPerD     30;
 
-nDvert      2.0;
-nDup        2.0;
-nDdown      2.0;
+nDvert      5.0;
+nDup        5.0;
+nDdown      5.0;
 
 xCenter     0.0;
 xMin        #calc "$xCenter-$D*$nDup";
@@ -36,8 +36,8 @@ yMax        #calc "$yCenter+$D*$nDvert";
 nY          #calc "$nDvert*$ptsPerD";
 
 zCenter     0.0;
-zMin        -0.1;//#calc "$zCenter-$D*$nDvert";
-zMax        0.1;//#calc "$zCenter+$D*$nDvert";
+zMin        -0.01;//#calc "$zCenter-$D*$nDvert";
+zMax        0.01;//#calc "$zCenter+$D*$nDvert";
 nz          1;//#calc "2*$nDvert*$ptsPerD";
 
 xUpRatio1   1.0;

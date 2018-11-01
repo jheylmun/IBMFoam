@@ -54,10 +54,11 @@ Foam::particleShapes::cylinder::cylinder
 (
     const polyMesh& mesh,
     const dictionary& dict,
-    const vector& center
+    const vector& center,
+    const bool buildMesh
 )
 :
-    particleShape(mesh, dict, center),
+    particleShape(mesh, dict, center, buildMesh),
     d_(readScalar(dict.lookup("d")))
 {
     if (mesh.nGeometricD() != 2)
@@ -71,9 +72,12 @@ Foam::particleShapes::cylinder::cylinder
     nk_ = 1;
     l_ = mag(max(mesh.points()).z() - min(mesh.points()).z());
 
-    discretize();
-    updateCellLists();
-    calcSf();
+    if (this->buildMesh_)
+    {
+        discretize();
+        updateCellLists();
+        calcSf();
+    }
 
 }
 
@@ -81,10 +85,11 @@ Foam::particleShapes::cylinder::cylinder
 (
     const particleShape& shape,
     const vector& center,
-    const vector& theta
+    const vector& theta,
+    const bool buildMesh
 )
 :
-    particleShape(shape, center, theta),
+    particleShape(shape, center, theta, buildMesh),
     d_(refCast<const cylinder>(shape).d_),
     l_(refCast<const cylinder>(shape).l_)
 {

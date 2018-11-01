@@ -15,28 +15,37 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 particleSizeDistribution monodisperse;
+pTypes (mono1);
+coupled true;
+
+moving true;
+rotating false;
+e 1;
 
 flow
 {
-    UInf            (0.3 0 0);
+    UInf            (0 0.1 0);
     rho             rhoInf;
-    rhoInf          1.4;
+    rhoInf          1045.0;
 }
-PSD
+
+mono1
 {
+    particleShape   sphere;
     nParticles      1;
-    deltaR          0.18;
+    d               0.004;
 
-}
+    rho             1500;
+    nTheta          200;
+    delta           1.3e-4;
 
-baseParticle
-{
-    p1              (0 0 -0.5);
-    p2              (0 0 0.5);
-    d               0.1;
-    nTheta          160;
-    nk              1;
-    delta           0.003;
+    randomVelocity false;
+//     velocityDistributionCoeffs
+//     {
+//         type gaussian;
+//         mean 0;
+//         variance 0;
+//     }
 }
 
 // ************************************************************************* //

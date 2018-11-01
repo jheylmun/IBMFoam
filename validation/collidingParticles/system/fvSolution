@@ -55,7 +55,7 @@ PIMPLE
     pRefValue       0;
     pressureCorrection true;
 
-    residualControl
+    outerCorrectorResidualControl
     {
         p
         {
@@ -75,7 +75,7 @@ relaxationFactors
     }
     equations
     {
-        U               0.3;
+        U               0.7;
     }
 }
 

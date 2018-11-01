@@ -23,30 +23,30 @@ boundaryField
 {
     inlet
     {
-        type            fixedValue;
+        type            cyclic;
         value           $freestreamValue;
     }
 
     outlet
     {
-        type            zeroGradient;
+        type            cyclic;
     }
 
     freestream1
     {
-        type            zeroGradient;
+        type            cyclic;
     }
     freestream2
     {
-        type            zeroGradient;
+        type            cyclic;
     }
     freestream3
     {
-        type            empty;
+        type            cyclic;
     }
     freestream4
     {
-        type            empty;
+        type            cyclic;
     }
 }
 

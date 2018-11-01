@@ -24,43 +24,35 @@ e 1;
 
 flow
 {
-    UInf            (1 0 0);
+    UInf            (0 0.22 0);
     rho             rhoInf;
     rhoInf          1.0;
 }
 
 mono1
 {
-    particleShape   ellipse;
-    nParticles 1;
-//     volumeFraction  0.1;
-    d               0.15;
-    a 0.05;
-    b 0.15;
-    rho             1000;
+    particleShape   cylinder;
+    volumeFraction  0.359;
+    d               0.004;
+
+    rho             1500;
     nTheta          300;
-    delta           0.004;
+    delta           1.3e-4;
 
     randomVelocity true;
     velocityDistributionCoeffs
     {
         type gaussian;
         mean 0;
-        variance 0.25;
-    }
-    randomTheta true;
-    thetaDistributionCoeffs
-    {
-        type uniform;
-        minVal 0;
-        maxVal 6.28;
+        variance 0;
     }
 }
 mono2
 {
     particleShape   cylinder;
-    volumeFraction  0.2;
-    d               0.05;
+    nParticles      5;
+//     volumeFraction  0.2;
+    d               0.025;
     rho             1000;
     nTheta          100;
     delta           0.004;
@@ -70,7 +62,7 @@ mono2
     {
         type gaussian;
         mean 0;
-        variance 0.25;
+        variance 0.1;
     }
 }
 

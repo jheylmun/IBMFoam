@@ -73,7 +73,8 @@ public:
         (
             const polyMesh& mesh,
             const dictionary& dict,
-            const vector& center
+            const vector& center,
+            const bool buildMesh = true
         );
 
         // Construct as a copy
@@ -81,7 +82,8 @@ public:
         (
             const particleShape& shape,
             const vector& center,
-            const vector& theta
+            const vector& theta,
+            const bool buildMesh = true
         );
 
 

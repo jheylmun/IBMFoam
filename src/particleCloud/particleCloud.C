@@ -461,14 +461,14 @@ bool Foam::particleCloud::found
     {
         if
         (
-            (
-                index == pIter().index()
-             && (copy + 1) <= pIter().copy()
-            )
-         || (
+//             (
+//                 index == pIter().index()
+//              && (copy + 1) <= pIter().copy()
+//             )
+//          || (
                 index == pIter().index()
              && mag(center - pIter().center()) < 1e-4
-            )
+//             )
         )
         {
             f = true;
@@ -949,6 +949,25 @@ void Foam::particleCloud::deleteInActiveParticles()
     }
 }
 
+void Foam::particleCloud::updateI()
+{
+    I_ = dimensionedScalar("0", dimless, 0.0);
+    forAll(mesh_.C(), celli)
+    {
+        const vector& pt = mesh_.C()[celli];
+
+        forAllIter(typename Cloud<particleIBM>, *this, pIter)
+        {
+            particleIBM& p = pIter();
+
+            if (p.r(pt) > mag(p.center() - pt))
+            {
+                I_[celli] = 1.0;
+            }
+        }
+    }
+}
+
 
 // * * * * * * * * * * * * * * * Constructor * * * * * * * * * * * * * * * * //
 
@@ -1015,7 +1034,18 @@ Foam::particleCloud::particleCloud
     coupled_(dict_.lookup("coupled")),
     moving_(dict_.lookup("moving")),
     rotating_(dict_.lookup("rotating")),
-    maxCopies_(nParticles_, -1)
+    maxCopies_(nParticles_, -1),
+    I_
+    (
+        IOobject
+        (
+            IOobject::groupName("I", "ibm"),
+            mesh.time().timeName(),
+            mesh
+        ),
+        mesh,
+        dimensionedScalar("0", dimless, 0.0)
+    )
 {
     forAll(mesh_.boundary(), patchi)
     {
@@ -1099,6 +1129,8 @@ Foam::particleCloud::particleCloud
         pIter().setCollisions(nParticles_, walls_.size());
         maxCopies_[pIter().index()] = 0;
     }
+
+    updateI();
 }
 
 
@@ -1192,7 +1224,7 @@ void Foam::particleCloud::integrateSurfaceStresses()
     forAllIter(typename Cloud<particleIBM>, *this, pIter)
     {
         particleIBM& p = pIter();
-        p.integrateSurfaceStress(tauf,pf);
+        p.integrateSurfaceStress(tauf*rhoRef_, pf*rhoRef_);
     }
 }
 

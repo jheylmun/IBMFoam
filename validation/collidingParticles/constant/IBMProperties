@@ -1,9 +1,9 @@
 /*--------------------------------*- C++ -*----------------------------------*\
-| =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  5.x                                   |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
-|    \\/     M anipulation  |                                                 |
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
@@ -15,28 +15,465 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-nParticles	1;
+nParticles	45;
 moving	true;
 rotating	true;
 coupled	true;
 e	1;
 flow
 {
-UInf	(1 0 0);
+UInf	(0 0.22 0);
 rho	rhoInf;
 rhoInf	1;
 }
 particle.0
 {
-particleShape	ellipse;
-position	(0 0 0);
-a	0.05;
-b	0.15;
+particleShape	cylinder;
+position	(0.01385726942 0.004029378276 0);
+d	0.004;
 nTheta	300;
 nk	1;
-delta	0.004;
-rho	1000;
-theta	(0 0 0.663014429);
-v	(-0.2949208535 0.5582986288 0);
+delta	0.00013;
+rho	1500;
+}
+particle.1
+{
+particleShape	cylinder;
+position	(0.003830198515 0.01583006229 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.2
+{
+particleShape	cylinder;
+position	(0.01418287456 -0.007634471692 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.3
+{
+particleShape	cylinder;
+position	(-0.01070543632 0.003363712095 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.4
+{
+particleShape	cylinder;
+position	(0.01035605734 -0.01339348899 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.5
+{
+particleShape	cylinder;
+position	(0.009077376574 -0.004306822289 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.6
+{
+particleShape	cylinder;
+position	(-0.004562413916 0.009834679849 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.7
+{
+particleShape	cylinder;
+position	(-0.01104416976 -0.01516456822 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.8
+{
+particleShape	cylinder;
+position	(-0.01625684839 0.005953031387 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.9
+{
+particleShape	cylinder;
+position	(-8.774902672e-06 0.01123546448 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.10
+{
+particleShape	cylinder;
+position	(-0.002937443219 -0.002349782363 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.11
+{
+particleShape	cylinder;
+position	(0.008211975582 0.007226266954 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.12
+{
+particleShape	cylinder;
+position	(-0.003843968753 -0.01394104004 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.13
+{
+particleShape	cylinder;
+position	(-0.01133779656 0.01633068277 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.14
+{
+particleShape	cylinder;
+position	(0.00935198769 0.0111021897 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.15
+{
+particleShape	cylinder;
+position	(-0.004022119325 0.001568062659 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.16
+{
+particleShape	cylinder;
+position	(0.0007932515256 -0.01077428171 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.17
+{
+particleShape	cylinder;
+position	(0.01624552056 0.009240904823 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.18
+{
+particleShape	cylinder;
+position	(0.004945165347 -0.005932345018 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.19
+{
+particleShape	cylinder;
+position	(-0.003535118904 -0.009702544343 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.20
+{
+particleShape	cylinder;
+position	(-0.008058026154 0.0001301111467 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.21
+{
+particleShape	cylinder;
+position	(-0.0141209499 -0.004228072297 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.22
+{
+particleShape	cylinder;
+position	(-0.006417594496 0.01673760828 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.23
+{
+particleShape	cylinder;
+position	(0.001902742162 0.002595559694 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.24
+{
+particleShape	cylinder;
+position	(-0.01758374387 0.001352394857 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.25
+{
+particleShape	cylinder;
+position	(-0.01496158728 -0.01391058214 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.26
+{
+particleShape	cylinder;
+position	(0.01725238385 -0.003778597172 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.27
+{
+particleShape	cylinder;
+position	(-0.0005313013867 0.01598813051 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.28
+{
+particleShape	cylinder;
+position	(-0.0009082064591 -0.01706697715 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.29
+{
+particleShape	cylinder;
+position	(-0.01154210767 0.01000697043 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.30
+{
+particleShape	cylinder;
+position	(-0.006785286441 -0.007232827023 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.31
+{
+particleShape	cylinder;
+position	(0.0145576391 -0.01637494508 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.32
+{
+particleShape	cylinder;
+position	(0.008584284373 -0.0174642659 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.33
+{
+particleShape	cylinder;
+position	(0.007567103375 0.0007814104296 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.34
+{
+particleShape	cylinder;
+position	(-0.005444540102 0.005512502361 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.35
+{
+particleShape	cylinder;
+position	(0.01337663997 0.01335997732 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.36
+{
+particleShape	cylinder;
+position	(-0.01769885248 0.01535467025 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.37
+{
+particleShape	cylinder;
+position	(-0.009464195501 -0.01081893511 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.38
+{
+particleShape	cylinder;
+position	(0.01438348478 0.0177291687 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.39
+{
+particleShape	cylinder;
+position	(0.0002196903341 -0.005444671083 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.40
+{
+particleShape	cylinder;
+position	(-0.01667124271 -0.007737438399 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.41
+{
+particleShape	cylinder;
+position	(0.0175884272 0.0003104078583 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.42
+{
+particleShape	cylinder;
+position	(0.01306161793 -0.0003572311811 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.43
+{
+particleShape	cylinder;
+position	(0.002041892279 0.006874585282 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
+}
+particle.44
+{
+particleShape	cylinder;
+position	(0.003351453245 -0.01437726997 0);
+d	0.004;
+nTheta	300;
+nk	1;
+delta	0.00013;
+rho	1500;
 }
 

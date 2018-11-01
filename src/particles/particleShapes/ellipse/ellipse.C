@@ -69,10 +69,11 @@ Foam::particleShapes::ellipse::ellipse
 (
     const polyMesh& mesh,
     const dictionary& dict,
-    const vector& center
+    const vector& center,
+    const bool buildMesh
 )
 :
-    particleShape(mesh, dict, center),
+    particleShape(mesh, dict, center, buildMesh),
     a_(readScalar(dict.lookup("a"))),
     b_(readScalar(dict.lookup("b")))
 {
@@ -88,19 +89,23 @@ Foam::particleShapes::ellipse::ellipse
     nk_ = 1;
     l_ = mag(max(mesh.points()).z() - min(mesh.points()).z());
 
-    discretize();
-    updateCellLists();
-    calcSf();
+    if (this->buildMesh_)
+    {
+        discretize();
+        updateCellLists();
+        calcSf();
+    }
 }
 
 Foam::particleShapes::ellipse::ellipse
 (
     const particleShape& shape,
     const vector& center,
-    const vector& theta
+    const vector& theta,
+    const bool buildMesh
 )
 :
-    particleShape(shape, center, theta),
+    particleShape(shape, center, theta, buildMesh),
     a_(refCast<const ellipse>(shape).a_),
     b_(refCast<const ellipse>(shape).b_),
     l_(refCast<const ellipse>(shape).l_)

@@ -54,10 +54,11 @@ Foam::particleShapes::sphere::sphere
 (
     const polyMesh& mesh,
     const dictionary& dict,
-    const vector& center
+    const vector& center,
+    const bool buildMesh
 )
 :
-    particleShape(mesh, dict, center),
+    particleShape(mesh, dict, center, buildMesh),
     d_(readScalar(dict.lookup("d")))
 {
     this->momentOfInertia_ = 2.0/5.0*sqr(d_/2.0);
@@ -65,6 +66,14 @@ Foam::particleShapes::sphere::sphere
     if (!dict.found("nk_"))
     {
         nk_ = nTheta_/2;
+        N_ = nRadial_*nTheta_*nk_;
+        centeredMesh_ = vectorField(N_, Zero);
+        mesh_ = vectorField(N_, Zero);
+        Sf_ = vectorField(nTheta_*nk_, Zero);
+        neighbourPoints_ = List<labelVector>(N_);
+        wToLocal_ = List<scalarList>(N_);
+        WToLocal_ = scalarList(N_);
+        facesToLocal_ = List<labelList>(N_);
     }
 
     if (mesh.nGeometricD() != 3)
@@ -73,9 +82,13 @@ Foam::particleShapes::sphere::sphere
             << "Sphere particle shape on valid for 3D meshes"
             << exit(FatalError);
     }
-    discretize();
-    updateCellLists();
-    calcSf();
+
+    if (this->buildMesh_)
+    {
+        discretize();
+        updateCellLists();
+        calcSf();
+    }
 }
 
 
@@ -83,10 +96,11 @@ Foam::particleShapes::sphere::sphere
 (
     const particleShape& shape,
     const vector& center,
-    const vector& theta
+    const vector& theta,
+    const bool buildMesh
 )
 :
-    particleShape(shape, center, theta),
+    particleShape(shape, center, theta, buildMesh),
     d_(refCast<const sphere>(shape).d_)
 {
     this->moveMesh(center);

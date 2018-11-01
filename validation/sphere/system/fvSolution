@@ -55,27 +55,13 @@ PIMPLE
     pRefValue       0;
     pressureCorrection true;
 
-    residualControl
+    outerCorrectorResidualControl
     {
         p
         {
-            tolerance   1e-3;
+            tolerance   1e-4;
             relTol      0;
         }
-    }
-}
-
-SIMPLE
-{
-    nNonOrthogonalCorrectors 1;
-    pRefCell        0;
-    pRefValue       0;
-    pressureCorrection true;
-
-    residualControl
-    {
-        p 1e-6;
-        U 1e-6;
     }
 }
 

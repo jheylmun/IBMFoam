@@ -14,14 +14,14 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-convertToMeters 0.1;
+convertToMeters 1;
 
-D           1.0;
-ptsPerD     50;
+D           0.004;
+ptsPerD     30;
 
-nDvert      5.0;
-nDup        5.0;
-nDdown      25.0;
+nDvert      2.5;
+nDup        2.5;
+nDdown      2.5;
 
 xCenter     0.0;
 xMin        #calc "$xCenter-$D*$nDup";
@@ -30,64 +30,35 @@ nXup        #calc "$nDup*$ptsPerD";
 nXdown      #calc "$nDdown*$ptsPerD";
 nX          #calc "$nXup+$nXdown";
 
-yCenter     0.0;
-yMin        #calc "$yCenter-$D*$nDvert";
-yMax        #calc "$yCenter+$D*$nDvert";
-nY          #calc "$nDvert*$ptsPerD";
-
-zCenter     0.0;
-zMin        #calc "$zCenter-$D*$nDvert";
-zMax        #calc "$zCenter+$D*$nDvert";
-nz          1;//#calc "2*$nDvert*$ptsPerD";
-
-xUpRatio1   1.0;
-xUpRatio2   #calc "1/$xUpRatio1";
-
-xDownRatio1 1.0;
-xDownRatio2 #calc "1/$xDownRatio1";
-
-yRatio1     1.0;
-yRatio2     #calc "1/$yRatio1";
-
 
 vertices
 (
-    ($xMin      $yMin       $zMin)
-    ($xCenter   $yMin       $zMin)
-    ($xMax      $yMin       $zMin)
-    ($xMax      $yCenter    $zMin)
-    ($xMax      $yMax       $zMin)
-    ($xCenter   $yMax       $zMin)
-    ($xMin      $yMax       $zMin)
-    ($xMin      $yCenter    $zMin)
-    ($xCenter   $yCenter    $zMin)
+    ($xMin      $xMin       $xMin)
+    ($xMax      $xMin       $xMin)
+    ($xMax      $xMax       $xMin)
+    ($xMin      $xMax       $xMin)
 
-    ($xMin      $yMin       $zMax)
-    ($xCenter   $yMin       $zMax)
-    ($xMax      $yMin       $zMax)
-    ($xMax      $yCenter    $zMax)
-    ($xMax      $yMax       $zMax)
-    ($xCenter   $yMax       $zMax)
-    ($xMin      $yMax       $zMax)
-    ($xMin      $yCenter    $zMax)
-    ($xCenter   $yCenter    $zMax)
+    ($xMin      $xMin       $xMax)
+    ($xMax      $xMin       $xMax)
+    ($xMax      $xMax       $xMax)
+    ($xMin      $xMax       $xMax)
 );
 
 blocks
 (
-//     hex (0 2 4 6 9 11 13 15) ($nX $nY 1) simpleGrading (1 1 1)
+    hex (0 1 2 3 4 5 6 7) ($nX $nX $nX) simpleGrading (1 1 1)
 
-    hex (0 1 8 7 9 10 17 16) ($nXup $nY $nz)
-        simpleGrading ($xUpRatio2 $yRatio2 $nz)
-
-    hex (1 2 3 8 10 11 12 17) ($nXdown $nY $nz)
-        simpleGrading ($xDownRatio1 $yRatio2 $nz)
-
-    hex (8 3 4 5 17 12 13 14) ($nXdown $nY $nz)
-        simpleGrading ($xDownRatio1 $yRatio1 $nz)
-
-    hex (7 8 5 6 16 17 14 15) ($nXup $nY $nz)
-        simpleGrading ($xUpRatio2 $yRatio1 $nz)
+//     hex (0 1 8 7 9 10 17 16) ($nXup $nY $nz)
+//         simpleGrading (1 1 1)//($xUpRatio2 $yRatio2 $nz)
+//
+//     hex (1 2 3 8 10 11 12 17) ($nXdown $nY $nz)
+//         simpleGrading (1 1 1)//($xDownRatio1 $yRatio2 $nz)
+//
+//     hex (8 3 4 5 17 12 13 14) ($nXdown $nY $nz)
+//         simpleGrading (1 1 1)//($xDownRatio1 $yRatio1 $nz)
+//
+//     hex (7 8 5 6 16 17 14 15) ($nXup $nY $nz)
+//         simpleGrading (1 1 1)//($xUpRatio2 $yRatio1 $nz)
 );
 
 edges
@@ -98,64 +69,72 @@ boundary
 (
     inlet
     {
-        type patch;
+        type cyclic;
+        neighbourPatch outlet;
         faces
         (
-            (7 0 9 16)
-            (6 7 16 15)
+//             (7 0 9 16)
+//             (6 7 16 15)
+            (0 3 7 4)
         );
     }
     outlet
     {
-        type patch;
+        type cyclic;
+        neighbourPatch inlet;
         faces
         (
-            (2 3 12 11)
-            (3 4 13 12)
+//             (2 3 12 11)
+//             (3 4 13 12)
+            (1 2 6 5)
         );
     }
     freestream1
     {
-        type patch;
+        type cyclic;
         neighbourPatch freestream2;
         faces
         (
-            (6 5 14 15)
-            (4 5 14 13)
+//             (6 5 14 15)
+//             (4 5 14 13)
+            (0 1 5 4)
         );
     }
     freestream2
     {
-        type patch;
+        type cyclic;
         neighbourPatch freestream1;
         faces
         (
-            (0 1 10 9)
-            (1 2 11 10)
+//             (0 1 10 9)
+//             (1 2 11 10)
+            (3 2 6 7)
         );
     }
     freestream3
     {
-        type empty;
+        type cyclic;
         neighbourPatch freestream4;
         faces
         (
-            (0 1 8 7)
-            (1 2 3 8)
-            (7 8 5 6)
-            (8 3 4 5)
+//             (0 1 8 7)
+//             (1 2 3 8)
+//             (7 8 5 6)
+//             (8 3 4 5)
+            (0 1 2 3)
         );
     }
     freestream4
     {
-        type empty;
+        type cyclic;
         neighbourPatch freestream3;
         faces
         (
-            (10 9 16 17)
-            (11 10 17 12)
-            (17 16 15 14)
-            (12 17 14 13)
+//             (10 9 16 17)
+//             (11 10 17 12)
+//             (17 16 15 14)
+//             (12 17 14 13)
+            (4 5 6 7)
         );
     }
 );

@@ -85,6 +85,9 @@ protected:
     //- fvMesh
     const polyMesh& pMesh_;
 
+    //- Switch to build mesh
+    Switch buildMesh_;
+
     //- Is the particle on the mesh
     locationType onMesh_;
 
@@ -212,9 +215,10 @@ public:
         (
             const polyMesh& mesh,
             const dictionary& dict,
-            const vector& center
+            const vector& center,
+            const bool buildMesh
         ),
-        (mesh, dict, center)
+        (mesh, dict, center, buildMesh)
     );
 
     declareRunTimeSelectionTable
@@ -225,9 +229,10 @@ public:
         (
             const particleShape& shape,
             const vector& center,
-            const vector& theta
+            const vector& theta,
+            const bool buildMesh
         ),
-        (shape, center, theta)
+        (shape, center, theta, buildMesh)
     );
 
     // Selectors
@@ -236,14 +241,16 @@ public:
         (
             const polyMesh& mesh,
             const dictionary& dict,
-            const vector& center
+            const vector& center,
+            const bool buildMesh = true
         );
 
         static autoPtr<particleShape> New
         (
             const particleShape& shape,
             const vector& center,
-            const vector& theta
+            const vector& theta,
+            const bool buildMesh = true
         );
 
 
@@ -254,7 +261,8 @@ public:
         (
             const polyMesh& mesh,
             const dictionary& dict,
-            const vector& center
+            const vector& center,
+            const bool buildMesh
         );
 
         // Construct as a copy
@@ -262,7 +270,8 @@ public:
         (
             const particleShape& shape,
             const vector& center,
-            const vector& theta
+            const vector& theta,
+            const bool buildMesh
         );
 
 

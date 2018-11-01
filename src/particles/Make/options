@@ -25,5 +25,4 @@ LIB_LIBS = \
     -lfileFormats \
     -lfiniteVolume \
     -lmeshTools \
-    -ldistributions \
-    -lIBMparticleCloud
+    -ldistributions
